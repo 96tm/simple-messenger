@@ -41,10 +41,10 @@ class User(UserMixin, db.Model):
         self.password_hash = generate_password_hash(password)
     
     def verify_password(self, password):
-        return check_password_hash(self.password, password)
+        return check_password_hash(self.password_hash, password)
 
     def __repr__(self):
-        return (f'User(id={self.id}, username={self.username} '
+        return (f'User(id={self.id}, username={self.username}, '
                 + f'registration_date={self.registration_date})')
 
 

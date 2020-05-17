@@ -1,0 +1,47 @@
+  .row .card {
+    border: none;
+    border-radius: 1rem;
+    transition: all 0.2s;
+    box-shadow: 0 0.5rem 1rem 0 rgba(0, 0, 0, 0.1);
+  }
+  
+  .row hr {
+    margin: 1.5rem 0;
+  }
+  
+  .row .card-title {
+    margin: 0.5rem 0;
+    font-size: 0.9rem;
+    letter-spacing: .1rem;
+    font-weight: bold;
+  }
+  
+  .row ul li {
+    margin-bottom: 1rem;
+  }
+  
+  .row .text-muted {
+    opacity: 0.7;
+  }
+  
+  /* Hover Effects on Card */
+  
+  @media (min-width: 992px) {
+    .row .card:hover {
+      margin-top: -.25rem;
+      margin-bottom: .25rem;
+      box-shadow: 0 0.5rem 1rem 0 rgba(0, 0, 0, 0.3);
+    }
+    .row .card:hover .btn {
+      opacity: 1;
+    }
+  }
+
+  .btn {
+    font-size: 75%;
+    border-radius: 5rem;
+    letter-spacing: .1rem;
+    font-weight: bold;
+    padding: .5rem;
+    transition: all 0.2s;
+  }
