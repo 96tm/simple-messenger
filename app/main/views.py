@@ -1,6 +1,6 @@
 from flask import render_template, session, redirect, url_for
 from . import main
-from .. import db
+from .. import database
 from ..models import User
 from flask_login import login_required
 

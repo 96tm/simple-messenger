@@ -7,7 +7,7 @@ from flask_moment import Moment
 from config import config
 
 
-db = SQLAlchemy()
+database = SQLAlchemy()
 login_manager = LoginManager()
 mail = Mail()
 moment = Moment()
@@ -15,20 +15,20 @@ bootstrap = Bootstrap()
 
 
 def create_app(config_name):
-    app = Flask(__name__)
-    app.config.from_object(config[config_name])
-    bootstrap.init_app(app)
-    db.init_app(app)
+    wsgi_application = Flask(__name__)
+    wsgi_application.config.from_object(config[config_name])
+    bootstrap.init_app(wsgi_application)
+    database.init_app(wsgi_application)
     login_manager.session_protection = 'strong'
     login_manager.login_view = 'auth.login'
-    login_manager.init_app(app)
-    mail.init_app(app)
-    moment.init_app(app)
+    login_manager.init_app(wsgi_application)
+    mail.init_app(wsgi_application)
+    moment.init_app(wsgi_application)
 
     from .main import main as main_blueprint
-    app.register_blueprint(main_blueprint)
+    wsgi_application.register_blueprint(main_blueprint)
 
     from .auth import auth as auth_blueprint
-    app.register_blueprint(auth_blueprint, url_prefix='/auth')
+    wsgi_application.register_blueprint(auth_blueprint, url_prefix='/auth')
 
-    return app
+    return wsgi_application
