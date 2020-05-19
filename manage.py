@@ -9,7 +9,7 @@ manager = Manager(wsgi_application)
 migrate = Migrate(wsgi_application, database)
 
 def make_shell_context():
-    return dict(app=wsgi_application, User=User, Role=Role)
+    return dict(app=wsgi_application, User=User, Role=Role, db=database)
 
 manager.add_command('shell', Shell(make_context=make_shell_context))
 manager.add_command('database', MigrateCommand)

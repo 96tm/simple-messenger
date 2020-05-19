@@ -3,6 +3,7 @@ from . import database
 from sqlalchemy.ext.associationproxy import association_proxy
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
+from datetime import datetime, timezone
 
 
 @login_manager.user_loader
@@ -25,10 +26,17 @@ class User(UserMixin, database.Model):
     __tablename__ = 'users'
     id = database.Column(database.Integer, primary_key=True)
     role_id = database.Column(database.Integer, database.ForeignKey('roles.id'))
-    registration_date = database.Column(database.DateTime)
-    username = database.Column(database.String(64), unique=True, index=True)
-    email = database.Column(database.String(64), unique=True, index=True)
-    password_hash = database.Column(database.String(128))
+    registration_date = database.Column(database.DateTime, nullable=False,
+                                        default=datetime.now(timezone.utc))
+    username = database.Column(database.String(64), 
+                               unique=True,
+                               index=True,
+                               nullable=False)
+    email = database.Column(database.String(64),
+                            unique=True,
+                            index=True,
+                            nullable=False)
+    password_hash = database.Column(database.String(128), nullable=False)
 
     users = association_proxy('user_relations', 'user')
     contacts = association_proxy('contact_relations', 'contact')
@@ -60,12 +68,18 @@ class Message(database.Model):
     __tablename__ = 'messages'
     id = database.Column(database.Integer, primary_key = True)
     text = database.Column(database.Text)
-    sender_id = database.Column(database.Integer, database.ForeignKey('users.id'))
-    recipient_id = database.Column(database.Integer, database.ForeignKey('users.id'))
+    message_date = database.Column(database.DateTime,
+                                   nullable=False,
+                                   default=datetime.now(timezone.utc))
+    sender_id = database.Column(database.Integer, 
+                                database.ForeignKey('users.id'),
+                                nullable=False)
+    recipient_id = database.Column(database.Integer,
+                                   database.ForeignKey('users.id'),
+                                   nullable=False)
 
     sender = database.relationship('User', foreign_keys=[sender_id])
     recipient = database.relationship('User', foreign_keys=[recipient_id])
-    message_date = database.Column(database.DateTime)
 
     def __repr__(self):
         return (f'Message(id={self.id}, text={self.text}, sender={self.sender.username} '
