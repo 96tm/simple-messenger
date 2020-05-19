@@ -7,6 +7,13 @@ from flask_migrate import Migrate, MigrateCommand
 wsgi_application = create_app(os.getenv('FLASK_CONFIG') or 'default')
 manager = Manager(wsgi_application)
 migrate = Migrate(wsgi_application, database)
+app = create_app('development')
+
+@manager.command
+def test():
+    import unittest
+    tests = unittest.TestLoader().discover('tests')
+    unittest.TextTestRunner(verbosity=2).run(tests)
 
 def make_shell_context():
     return dict(app=wsgi_application, User=User, Role=Role, db=database)

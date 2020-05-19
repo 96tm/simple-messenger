@@ -1,9 +1,13 @@
 from . import login_manager
 from . import database
+from datetime import datetime, timezone
+from itsdangerous import BadHeader
+from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
 from sqlalchemy.ext.associationproxy import association_proxy
+from flask import current_app
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import datetime, timezone
+
 
 
 @login_manager.user_loader
@@ -25,6 +29,7 @@ class Role(database.Model):
 class User(UserMixin, database.Model):
     __tablename__ = 'users'
     id = database.Column(database.Integer, primary_key=True)
+    confirmed = database.Column(database.Boolean, default=False)
     role_id = database.Column(database.Integer, database.ForeignKey('roles.id'))
     registration_date = database.Column(database.DateTime, nullable=False,
                                         default=datetime.now(timezone.utc))
@@ -61,7 +66,23 @@ class User(UserMixin, database.Model):
     
     def add_contact(self, contact, contact_group=None):
         relation = UserContactsAssociation(user=self, contact=contact)
-        database.session.add(relation)
+        database.session.add(self)
+    
+    def generate_confirmation_token(self, expiration=3600):
+        serializer = Serializer(current_app.config['SECRET_KEY'], expiration)
+        return serializer.dumps({'confirm': self.id})
+    
+    def confirm(self, token):
+        serializer = Serializer(current_app.config['SECRET_KEY'])
+        try:
+            data = serializer.loads(token)
+        except BadHeader:
+            return False
+        if data.get('confirm') != self.id:
+            return False
+        self.confirmed = True
+        database.session.add(self)
+        return True
 
 
 class Message(database.Model):

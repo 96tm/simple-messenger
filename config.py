@@ -6,7 +6,7 @@ class Config:
     SQLALCHEMY_COMMIT_ON_TEARDOWN = True
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     MAIL_SUBJECT_PREFIX = '[SimpleChat]'
-    MAIL_SENDER = 'Admin <use@some.mail'
+    MAIL_SENDER = os.environ.get('MAIL_SENDER', 'Admin <use@some.mail')
     ADMIN = os.environ.get('SECRET_CHAT_ADMIN', 'Admin')
 
     @staticmethod

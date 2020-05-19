@@ -1,0 +1,2 @@
+Hello! It seems you've registered at SimpleChat.
+Please follow the link {{link}} to confirm registration.
