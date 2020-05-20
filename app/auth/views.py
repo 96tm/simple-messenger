@@ -6,6 +6,22 @@ from . import auth
 from .forms import LoginForm, RegistrationForm
 from ..models import User
 from .. import database
+from ..email import send_email
+
+
+@auth.before_app_request
+def before_request():
+    if (current_user.is_authenticated
+            and not current_user.confirmed
+            and not request.endpoint.startswith('auth.')):
+        return redirect(url_for('auth.unconfirmed'))
+
+
+@auth.route('/')
+def unconfirmed():
+    if current_user.is_anonymous or current_user.confirmed:
+        return redirect('main.index')
+    return render_template('auth/unconfirmed.html', user=current_user)
 
 
 @auth.route('/login', methods=['GET', 'POST'])
@@ -50,6 +66,40 @@ def signup():
         user.password = form.data['password']
         database.session.add(user)
         database.session.commit()
-        return redirect(url_for('auth.login'))
+        token = user.generate_confirmation_token()
+        send_email(user.email, 
+                  'Registration confirmation',
+                  'mail/registration_letter',
+                  user=user,
+                  token=token,
+                  link=url_for('auth.confirm', token=token, _externa=True))
+        flash('A confirmation letter has been sent to ' + user.email)
+        return redirect(url_for('main.index'))
 
     return render_template('auth/registration.html', form=form)
+
+
+@auth.route('/confirm/<token>')
+@login_required
+def confirm(token):
+    if current_user.confirmed:
+        return redirect(url_for('main.index'))
+    if current_user.confirm(token):
+        flash('Your account has been confirmed')
+    else:
+        flash('The confirmation link is invalid or has expired. Please sign up again.')
+    return redirect(url_for('main.index'))
+
+
+@auth.route('/confirm')
+@login_required
+def resend_confirmation():
+    token = current_user.generate_confirmation_token()
+    send_email(current_user.email,
+               'Registration confirmation',
+               'mail/registration_letter',
+               user=current_user,
+               token=token,
+               link=url_for('auth.confirm', token=token, _external=True))
+    flash('A new confirmation letter has been sent to ' + current_user.email)
+    return redirect(url_for('main.index'))

@@ -1,2 +1,2 @@
-Hello! It seems you've registered at SimpleChat.
-Please follow the link {{link}} to confirm registration.
+Hello {{user.username}}! It seems you've registered at SimpleChat.
+Please follow the link {{link}} and log in using your password to confirm registration.

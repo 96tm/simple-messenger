@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+
+{% block title %}
+  SimpleChat - User not confirmed
+{% endblock %}
+
+{% block page_content %}
+<div class="container">
+Hello, {{user.username}}!
+A letter with a confirmation link has been sent to {{user.email}}, 
+please check your inbox.
+If you'd like to get another confirmation email, click <a href="{{url_for('auth.resend_confirmation')}}">here.</a>
+</div>
+{% endblock %}
