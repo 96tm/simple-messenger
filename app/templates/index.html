@@ -13,6 +13,17 @@
 {% if current_user.is_authenticated %}
 <div class="container">
     <div class="row">
+      <!-- Contacts search-->
+      <div class="col-lg-3">
+        <div class="card mb-5 mb-lg-0">
+          <div class="card-body">
+            <h5 class="card-title text-muted text-uppercase text-center">Contacts</h5>
+            <input class="form-control" type="search" placeholder="search...">
+            <hr>
+            <button class="btn btn-block btn-primary text-uppercase">Search</button>
+          </div>
+        </div>
+      </div>
       <!-- Contacts -->
       <div class="col-lg-3">
         <div class="card mb-5 mb-lg-0">
@@ -21,17 +32,22 @@
             <input class="form-control" type="search" placeholder="search...">
             <hr>
             <ul class="fa-ul">
-              <li><span class="fa-li"><i class="fas fa-check"></i></span><strong>Current contact</strong></li>
-              <li><span class="fa-li"><i class="fas fa-check"></i></span>Online contact 1</li>
-              <li><span class="fa-li"><i class="fas fa-check"></i></span>Online contact 2</li>
-              <li class="text-muted"><span class="fa-li"><i class="fas fa-times"></i></span>Offline contact</li>
+              {% if names %}
+                {% for name in names %}
+                <li class="contact-item"><span class="fa-li"><i class="fas fa-times"></i></span>
+                  <span>{{ name }}  </span>
+                </li>
+                {% endfor %}
+              {% else %}
+              <li class="text-muted"><span class="fa-li"><i class="fas fa-times"></i></span>no contacts</li>
+              {% endif %}
             </ul>
             <button class="btn btn-block btn-primary text-uppercase">Search</button>
           </div>
         </div>
       </div>
       <!-- Chat -->
-      <div class="col-lg-9">
+      <div class="col-lg-6">
         <div class="card">
           <div class="card-body">
             <h5 class="card-title text-muted text-uppercase text-center">Chat</h5>

@@ -1,5 +1,5 @@
 from app import create_app, database
-from app.models import User
+from app.models import User, Role
 from flask import current_app
 import unittest
 
@@ -53,3 +53,11 @@ class UserModelTestCase(unittest.TestCase):
         token2 = user2.generate_confirmation_token()
         self.assertFalse(user1.confirm(token2))
         self.assertTrue(user1.confirm(token1))
+    
+    def test_roles_and_permissions(self):
+        Role.insert_roles()
+        user = User(username='user', email='user@user.user', password='user')
+        self.assertEqual(user.role, Role.query.filter_by(is_default=True).first())
+        self.assertEqual(user.role, Role.query.filter_by(name='User').first())
+        admin = User(username='admin', email=current_app.config['ADMIN_MAIL'], password='admin')
+        self.assertEqual(admin.role, Role.query.filter_by(name='Admin').first())

@@ -1,3 +1,22 @@
+  li.contact-item{
+    cursor: pointer;
+    list-style: none;
+  }
+
+  li.contact-item:before{    
+      content: '';
+      display: inline-block;
+      height: .7em;
+      width: .7em;
+      background-image: url('../img/offline.png');
+      background-size:contain;
+      background-repeat:no-repeat;
+  }
+
+  li.contact-item:hover{
+    font-weight: bold;
+  }
+
   .row .card {
     border: none;
     border-radius: 1rem;

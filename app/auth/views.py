@@ -1,12 +1,11 @@
-from flask import render_template, flash, redirect, request, url_for
-from flask_login import login_user, logout_user, login_required, current_user
-from datetime import datetime, timezone
-from sqlalchemy import or_
 from . import auth
-from .forms import LoginForm, RegistrationForm
-from ..models import User
 from .. import database
+from .forms import LoginForm, RegistrationForm
 from ..email import send_email
+from ..models import User
+from datetime import datetime, timezone
+from flask import render_template, flash, redirect, request, url_for, session
+from flask_login import login_user, logout_user, login_required, current_user
 
 
 @auth.before_app_request

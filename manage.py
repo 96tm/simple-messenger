@@ -9,6 +9,7 @@ manager = Manager(wsgi_application)
 migrate = Migrate(wsgi_application, database)
 app = create_app('development')
 
+
 @manager.command
 def test():
     import unittest

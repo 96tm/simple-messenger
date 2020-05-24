@@ -8,6 +8,7 @@ class Config:
     MAIL_SUBJECT_PREFIX = '[SimpleChat]'
     MAIL_SENDER = os.environ.get('MAIL_SENDER', 'Admin <use@some.mail')
     ADMIN = os.environ.get('SECRET_CHAT_ADMIN', 'Admin')
+    ADMIN_MAIL = 'admin@admin.admin'
 
     @staticmethod
     def init_app(app):
