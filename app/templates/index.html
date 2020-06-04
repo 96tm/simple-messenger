@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
 
 {% block title %}
     SimpleChat
@@ -20,6 +20,19 @@
             <h5 class="card-title text-muted text-uppercase text-center">Contacts</h5>
             <input class="form-control" type="search" placeholder="search...">
             <hr>
+            <div class="user-list">
+                <ul class="fa-ul">
+                  {% if users %}
+                    {% for user in users %}
+                    <li class="contact-item"><span class="fa-li"><i class="fas fa-times"></i></span>
+                      <span>{{ user.username }}  </span>
+                    </li>
+                    {% endfor %}
+                  {% else %}
+                  <li class="text-muted"><span class="fa-li"><i class="fas fa-times"></i></span>no contacts</li>
+                  {% endif %}
+                </ul>
+            </div>
             <button class="btn btn-block btn-primary text-uppercase">Search</button>
           </div>
         </div>
@@ -31,17 +44,19 @@
             <h5 class="card-title text-muted text-uppercase text-center">Contacts</h5>
             <input class="form-control" type="search" placeholder="search...">
             <hr>
-            <ul class="fa-ul">
-              {% if names %}
-                {% for name in names %}
-                <li class="contact-item"><span class="fa-li"><i class="fas fa-times"></i></span>
-                  <span>{{ name }}  </span>
-                </li>
-                {% endfor %}
-              {% else %}
-              <li class="text-muted"><span class="fa-li"><i class="fas fa-times"></i></span>no contacts</li>
-              {% endif %}
-            </ul>
+            <div class="user-list">
+              <ul class="fa-ul">
+                {% if contacts %}
+                  {% for contact in contacts %}
+                  <li class="contact-item"><span class="fa-li"><i class="fas fa-times"></i></span>
+                    <span>{{ contact.username }}  </span>
+                  </li>
+                  {% endfor %}
+                {% else %}
+                <li class="text-muted"><span class="fa-li"><i class="fas fa-times"></i></span>no contacts</li>
+                {% endif %}
+              </ul>
+            </div>
             <button class="btn btn-block btn-primary text-uppercase">Search</button>
           </div>
         </div>
@@ -53,11 +68,29 @@
             <h5 class="card-title text-muted text-uppercase text-center">Chat</h5>
             <input class="form-control" type="search" placeholder="search...">
             <hr>
-            <textarea rows="4" cols="65">
-            </textarea>
+            {% if user %}
+                <div class="messages-area">
+                        {% for message in user.messages_from %}
+                        <div class="message">
+                                <span> 
+                                    <b> {{user.username}} </b> 
+                                    {{message.message_date}}
+                                </span>
+                                <br>
+                                {{message.text}}
+                        </div>
+                        <br>
+                        {% endfor %}
+                </div>
+            {% endif %}
             <hr>
-            <textarea rows="4" cols="65">your message...</textarea>
-            <hr>
+            <div class="message-field-wrapper">
+                <textarea id="message-field-id"
+                      name="message_field" cols="38" 
+                      autofocus maxlength="1000"
+                      minlength="1"
+                      placeholder="your message..."></textarea>
+            </div>
             <button class="btn btn-block btn-primary text-uppercase">Send message</button>
           </div>
         </div>

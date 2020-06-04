@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 from app import create_app, database
 from app.models import User, Role
 from flask import current_app
@@ -10,6 +12,7 @@ class UserModelTestCase(unittest.TestCase):
         self.app_context = self.app.app_context()
         self.app_context.push()
         database.create_all()
+        Role.insert_roles()
     
     def tearDown(self):
         database.session.remove()
@@ -17,36 +20,52 @@ class UserModelTestCase(unittest.TestCase):
         self.app_context.pop()
 
     def test_password_setter(self):
-        user = User(password='pass')
+        user = User(username='user', email='user@user.user', password='pass')
         self.assertTrue(user.password_hash is not None)
     
     def test_no_password_getter(self):
-        user = User(password='pass')
+        user = User(username='user', email='user@user.user', password='pass')
         with self.assertRaises(AttributeError):
             user.password
     
     def test_password_verification(self):
-        user = User(password='pass')
+        user = User(username='user', email='user@user.user', password='pass')
         self.assertTrue(user.verify_password('pass'))
         self.assertFalse(user.verify_password('shall not pass'))
 
     def test_passwords_salts_are_random(self):
-        user1 = User(password='pass')
-        user2 = User(password='pass')
+        user1 = User(username='user', email='user@user.user', password='pass')
+        user2 = User(username='user', email='user@user.user', password='pass')
         self.assertTrue(user1.password_hash != user2.password_hash)
     
     def test_add_contacts(self):
-        user1 = User()
-        user2 = User()
-        user3 = User()
+        user1 = User(username='duke', confirmed=True,
+                     email='duke@duke.duke',
+                     password='duke')
+        user2 = User(username='craig', confirmed=True,
+                     email='craig@craig.craig',
+                     password='craig')
+        user3 = User(username='sophia', confirmed=True,
+                     email='sophia@sophia.sophia',
+                     password='sophia')
+        database.session.add_all((user1, user2, user3))
+        database.session.commit()
         user1.add_contact(user2)
         user1.add_contact(user3)
-        self.assertIn(user2, user1.contacts)
-        self.assertIn(user3, user1.contacts)
+        database.session.commit()
+        
+        self.assertEqual(user2, user1.contacts.filter_by(contact_id=user2.id).first().contact)
+        self.assertTrue(user1.has_contact(user3))
+        self.assertFalse(user2.has_contact(user1))
+        self.assertTrue(user2.is_contacted_by(user1))
+        user1.delete_contact(user2)
+        database.session.commit()
+        self.assertFalse(user1.has_contact(user2))
+        self.assertFalse(user2.is_contacted_by(user1))
     
     def test_confirm_user(self):
-        user1 = User()
-        user2 = User()
+        user1 = User(username='user1', email='user1@user.user', password='pass')
+        user2 = User(username='user2', email='user2@user.user', password='pass')
         user1.id = 1
         user2.id = 2
         token1 = user1.generate_confirmation_token()

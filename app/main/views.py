@@ -4,15 +4,25 @@ from .. import database
 from ..models import User
 from flask_login import login_required, current_user
 from datetime import datetime, timezone
+from sqlalchemy import not_
+from .forms import MessageForm
 
 
 @main.route('/')
 @login_required
 def index():
-    return render_template('index.html', 
-                           names = [user.username 
-                                    for user 
-                                    in current_user.contacts])
+    users = (User.query
+            .filter(not_(User.id == current_user.id))
+            .order_by(User.username).all())
+    contacts = [user_contact.contact 
+                for user_contact
+                in current_user.contacts.all()]
+    return render_template('index.html',
+                           user = current_user,
+                           users = users,
+                           contacts = contacts,
+                           form = MessageForm()
+                           )
 
 
 @main.before_app_request

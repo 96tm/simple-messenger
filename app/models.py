@@ -26,6 +26,7 @@ class Role(database.Model):
     def __repr__(self):
         return f'Role(id={self.id}, name={self.name}'
 
+    # TODO
     # change admin permissions to the disjunction of all the available
     # permissions in future
     
@@ -47,6 +48,19 @@ class Role(database.Model):
         database.session.commit()
 
 
+class Contact(database.Model):
+    __tablename__ = 'contacts'
+    user_id = database.Column(database.Integer,
+                              database.ForeignKey('users.id'),
+                              primary_key=True)
+    contact_id = database.Column(database.Integer,
+                                 database.ForeignKey('users.id'),
+                                 primary_key=True)
+    contact_group = database.Column(database.String(16), nullable=True)
+
+    timestamp = database.Column(database.DateTime, default=datetime.now(tz=timezone.utc))
+
+
 class User(UserMixin, database.Model):
     __tablename__ = 'users'
     id = database.Column(database.Integer, primary_key=True)
@@ -65,8 +79,12 @@ class User(UserMixin, database.Model):
                             nullable=False)
     password_hash = database.Column(database.String(128), nullable=False)
 
-    users = association_proxy('user_relations', 'user')
-    contacts = association_proxy('contact_relations', 'contact')
+    contacts = database.relationship('Contact', foreign_keys=[Contact.user_id],
+                                       backref=database.backref('user', lazy='joined'),
+                                       lazy='dynamic', cascade='all, delete-orphan')
+    contacted = database.relationship('Contact', foreign_keys=[Contact.contact_id],
+                                       backref=database.backref('contact', lazy='joined'),
+                                       lazy='dynamic', cascade='all, delete-orphan')
 
     messages_from = database.relationship('Message', primaryjoin='User.id==Message.sender_id')
     messages_to = database.relationship('Message', primaryjoin='User.id==Message.recipient_id')
@@ -92,7 +110,6 @@ class User(UserMixin, database.Model):
         return (self.role is not None
                 and (self.role.permissions & permission == permission))
     
-
     @property
     def password(self):
         raise AttributeError('Password is not a readable attribute')
@@ -104,9 +121,21 @@ class User(UserMixin, database.Model):
     def verify_password(self, password):
         return check_password_hash(self.password_hash, password)
     
-    def add_contact(self, contact, contact_group=None):
-        relation = UserContactsAssociation(user=self, contact=contact)
-        database.session.add(self)
+    def has_contact(self, user):
+        return bool(self.contacts.filter_by(contact_id=user.id).first())
+    
+    def is_contacted_by(self, user):
+        return bool(self.contacted.filter_by(user_id=user.id).first())
+    
+    def add_contact(self, user, contact_group=None):
+        if not self.has_contact(user):
+            relation = Contact(user=self, contact=user, contact_group=contact_group)
+            database.session.add(relation)
+    
+    def delete_contact(self, user):
+        if self.has_contact(user):
+            relation = self.contacts.filter_by(contact_id=user.id).first()
+            database.session.delete(relation)
     
     def generate_confirmation_token(self, expiration=3600):
         serializer = Serializer(current_app.config['SECRET_KEY'], expiration)
@@ -154,24 +183,6 @@ class Message(database.Model):
     def __repr__(self):
         return (f'Message(id={self.id}, text={self.text}, sender={self.sender.username} '
                 + f'recipient={self.recipient.username}, message_date={self.message_date}')
-
-
-class UserContactsAssociation(database.Model):
-    __tablename__ = 'user_contacts_association'
-    user_id = database.Column(database.Integer,
-                              database.ForeignKey('users.id'),
-                              primary_key=True)
-    contact_id = database.Column(database.Integer,
-                                 database.ForeignKey('users.id'),
-                                 primary_key=True)
-    contact_group = database.Column(database.String(16), nullable=True)
-
-    user = database.relationship('User',
-                                   primaryjoin=(user_id == User.id),
-                                   backref='contact_relations')
-    contact = database.relationship('User',
-                                 primaryjoin=(contact_id == User.id),
-                                 backref='user_relations')
 
 
 class Permission:
