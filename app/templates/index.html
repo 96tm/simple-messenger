@@ -21,11 +21,12 @@
             <input class="form-control" type="search" placeholder="search...">
             <hr>
             <div class="user-list">
-                <ul class="fa-ul">
+                <ul id="user-list-id" class="fa-ul">
                   {% if users %}
                     {% for user in users %}
-                    <li class="contact-item"><span class="fa-li"><i class="fas fa-times"></i></span>
-                      <span>{{ user.username }}  </span>
+                    <li id="user-{{user.id}}" class="user-item">
+                      <span class="fa-li"><i class="fas fa-times"></i></span>
+                      <span>{{ user.username }}</span>
                     </li>
                     {% endfor %}
                   {% else %}
@@ -33,7 +34,7 @@
                   {% endif %}
                 </ul>
             </div>
-            <button class="btn btn-block btn-primary text-uppercase">Search</button>
+            <button id="add-selected-contacts-id" class="btn btn-block btn-primary text-uppercase">Add</button>
           </div>
         </div>
       </div>
@@ -44,14 +45,14 @@
             <h5 class="card-title text-muted text-uppercase text-center">Your contacts</h5>
             <input class="form-control" type="search" placeholder="search...">
             <hr>
-            <div class="user-list">
+            <div class="contact-list">
               <ul id="contact-list-id" class="fa-ul">
                 {% if current_user %}
                   {% for contact in contacts %}
-                  <li id="{{ contact.id}}" 
+                  <li id="contact-{{ contact.id}}" 
                       class="contact-item {% if current_contact_id == contact.id %} selected-current-contact {% endif %}">
                     <span class="fa-li"><i class="fas fa-times"></i></span>
-                    <span id="contact-list-span-{{ contact.id }}" class="contact-item-span">{{ contact.username }}  </span>
+                    <span>{{ contact.username }}  </span>
                   </li>
                   {% endfor %}
                 {% else %}
@@ -59,7 +60,7 @@
                 {% endif %}
               </ul>
             </div>
-            <button class="btn btn-block btn-primary text-uppercase">Search</button>
+            <button id="remove-selected-contact-id" class="btn btn-block btn-primary text-uppercase">Remove</button>
           </div>
         </div>
       </div>

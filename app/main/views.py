@@ -25,12 +25,48 @@ def get_messages(user, contact_id):
                  'timestamp': message.message_date.strftime(date_format),
                  'sender_username': message.sender.username} 
                 for message in messages]
-    # print(messages[0]['timestamp'].isoformat())
     return jsonify({'messages': messages,
                     'contact_username': contact.username,
                     'current_username': current_user.username
                    })
 
+
+@main.route('/remove_contact', methods=['POST'])
+@login_required
+def remove_contact():
+    if request.is_json and request.json and request.json['contact_id']:
+        try:
+            contact_id = int(request.json['contact_id'])
+            print(contact_id)
+            user = User.query.get_or_404(contact_id)
+            if user:
+                current_user._get_current_object().delete_contact(user)
+                session['current_contact_id'] = contact_id
+                removed_contact = {'username': user.username,
+                               'contact_id': contact_id}
+                print(removed_contact)
+                return jsonify({'removed_contact': removed_contact})
+        except ValueError:
+            print('Invalid contact')
+    abort(404)
+
+@main.route('/add_contacts', methods=['POST'])
+@login_required
+def add_contacts():
+    if request.is_json and request.json and request.json['contact_ids']:
+        try:
+            added_contacts = []
+            for user_id in request.json['contact_ids']:
+                contact_id = int(user_id)
+                contact = User.query.get(contact_id)
+                current_user._get_current_object().add_contact(contact)
+                added_contacts.append({'username': contact.username,
+                                       'contact_id': contact.id})
+            json_messages = jsonify({'added_contacts': added_contacts})
+            return json_messages
+        except ValueError:
+            print('Invalid contact')
+    abort(404)
 
 @main.route('/choose_contact', methods=['POST'])
 @login_required
@@ -79,15 +115,15 @@ def send_message():
 @main.route('/')
 @login_required
 def index():
+    contacts = [contact.contact for contact in current_user.contacts]
     users = (User.query
-            .filter(not_(User.id == current_user.id))
+            .filter(and_(not_(User.id == current_user.id),
+                         ~User.id.in_(contact.id for contact in contacts)))
             .order_by(User.username).all())
-    contacts = (contact.contact for contact in current_user.contacts)
     current_contact_id = session.get('current_contact_id')
     messages = None
     if current_contact_id:
         messages = get_messages(current_user._get_current_object(), current_contact_id)
-        print(messages.json)
     return render_template('index.html',
                            contacts = contacts,
                            users = users,

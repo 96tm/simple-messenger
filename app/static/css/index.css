@@ -1,8 +1,17 @@
+  li.selected-element {
+    font-weight: bold;
+  }
+
   li.selected-current-contact{
     font-weight: bold;
   }
 
   .hidden-element{
+    visibility: hidden;
+  }
+
+  #add-selected-contacts-id,
+  #remove-selected-contact-id{
     visibility: hidden;
   }
   
@@ -48,12 +57,13 @@
   }
 
 
-  li.contact-item{
+  li.contact-item, li.user-item{
     cursor: pointer;
     list-style: none;
   }
 
-  li.contact-item:before{    
+  li.contact-item:before,
+  li.user-item:before{
       content: '';
       display: inline-block;
       height: .7em;
@@ -63,7 +73,8 @@
       background-repeat:no-repeat;
   }
 
-  li.contact-item:hover{
+  li.contact-item:hover,
+  li.user-item:hover{
     font-weight: bold;
   }
 
