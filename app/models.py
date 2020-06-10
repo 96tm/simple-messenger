@@ -1,7 +1,7 @@
 from . import login_manager
 from . import database
 from datetime import datetime, timezone
-from itsdangerous import BadHeader
+from itsdangerous import BadHeader, SignatureExpired
 from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
 from sqlalchemy.ext.associationproxy import association_proxy
 from flask import current_app
@@ -145,7 +145,7 @@ class User(UserMixin, database.Model):
         serializer = Serializer(current_app.config['SECRET_KEY'])
         try:
             data = serializer.loads(token)
-        except BadHeader:
+        except (BadHeader, SignatureExpired):
             return False
         if data.get('confirm') != self.id:
             return False

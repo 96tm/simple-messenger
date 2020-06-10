@@ -1,7 +1,8 @@
 from datetime import datetime, timezone
+import time
 
 from app import create_app, database
-from app.models import User, Role
+from app.models import User, Role, Permission, Contact
 from flask import current_app
 import unittest
 
@@ -58,8 +59,14 @@ class UserModelTestCase(unittest.TestCase):
         self.assertTrue(user1.has_contact(user3))
         self.assertFalse(user2.has_contact(user1))
         self.assertTrue(user2.is_contacted_by(user1))
+        self.assertTrue(user1.contacts.count() == 2)
+        self.assertTrue(user2.contacted.count() == 1)
+        self.assertTrue(Contact.query.count() == 2)
         user1.delete_contact(user2)
         database.session.commit()
+        self.assertTrue(Contact.query.count() == 1)
+        self.assertTrue(user1.contacts.count() == 1)
+        self.assertTrue(user2.contacted.count() == 0)
         self.assertFalse(user1.has_contact(user2))
         self.assertFalse(user2.is_contacted_by(user1))
     
@@ -73,10 +80,25 @@ class UserModelTestCase(unittest.TestCase):
         self.assertFalse(user1.confirm(token2))
         self.assertTrue(user1.confirm(token1))
     
-    def test_roles_and_permissions(self):
+    def test_expired_confirmation_token(self):
+        user = User(password='pass', email='user@user.user', username='user')
+        database.session.add(user)
+        database.session.commit()
+        token = user.generate_confirmation_token(1)
+        time.sleep(2)
+        self.assertFalse(user.confirm(token))
+    
+    def test_roles(self):
         Role.insert_roles()
         user = User(username='user', email='user@user.user', password='user')
+        admin = User(username='admin', email=current_app.config['ADMIN_MAIL'], password='admin')
         self.assertEqual(user.role, Role.query.filter_by(is_default=True).first())
         self.assertEqual(user.role, Role.query.filter_by(name='User').first())
-        admin = User(username='admin', email=current_app.config['ADMIN_MAIL'], password='admin')
         self.assertEqual(admin.role, Role.query.filter_by(name='Admin').first())
+
+    def test_permissions(self):
+        Role.insert_roles()
+        user = User(username='user', email='user@user.user', password='user')
+        admin = User(username='admin', email=current_app.config['ADMIN_MAIL'], password='admin')
+        self.assertFalse(user.has_permission(Permission.ADMINISTRATION))
+        self.assertTrue(admin.has_permission(Permission.ADMINISTRATION))
