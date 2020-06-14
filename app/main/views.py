@@ -37,14 +37,12 @@ def remove_contact():
     if request.is_json and request.json and request.json['contact_id']:
         try:
             contact_id = int(request.json['contact_id'])
-            print(contact_id)
             user = User.query.get_or_404(contact_id)
             if user:
                 current_user._get_current_object().delete_contact(user)
-                session['current_contact_id'] = contact_id
+                session['current_contact_id'] = None
                 removed_contact = {'username': user.username,
-                               'contact_id': contact_id}
-                print(removed_contact)
+                                   'contact_id': str(contact_id)}
                 return jsonify({'removed_contact': removed_contact})
         except ValueError:
             print('Invalid contact')
@@ -61,12 +59,13 @@ def add_contacts():
                 contact = User.query.get(contact_id)
                 current_user._get_current_object().add_contact(contact)
                 added_contacts.append({'username': contact.username,
-                                       'contact_id': contact.id})
+                                       'contact_id': str(contact.id)})
             json_messages = jsonify({'added_contacts': added_contacts})
             return json_messages
         except ValueError:
             print('Invalid contact')
     abort(404)
+
 
 @main.route('/choose_contact', methods=['POST'])
 @login_required
@@ -120,15 +119,18 @@ def index():
             .filter(and_(not_(User.id == current_user.id),
                          ~User.id.in_(contact.id for contact in contacts)))
             .order_by(User.username).all())
-    current_contact_id = session.get('current_contact_id')
     messages = None
+    current_contact_username = None
+    current_contact_id = session.get('current_contact_id')
     if current_contact_id:
         messages = get_messages(current_user._get_current_object(), current_contact_id)
+        current_contact_username = User.query.get(current_contact_id).username
     return render_template('index.html',
                            contacts = contacts,
                            users = users,
                            messages = messages,
-                           current_contact_id=current_contact_id)
+                           current_contact_id=current_contact_id,
+                           current_contact_username=current_contact_username)
 
 
 @main.before_app_request

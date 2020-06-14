@@ -2,13 +2,23 @@
     font-weight: bold;
   }
 
+  .center-from-left {
+    margin-left: auto;
+  }
+
+  .center-from-right {
+    margin-right: auto;
+  }
+
+
   li.selected-current-contact{
     font-weight: bold;
   }
 
   .hidden-element{
-    visibility: hidden;
+    display: none;
   }
+
 
   #add-selected-contacts-id,
   #remove-selected-contact-id{
@@ -25,7 +35,7 @@
     height: 100%;
   }
 
-  .message-field-wrapper{
+  .message-field-window{
     padding-bottom: .5em;
   }
 
@@ -36,11 +46,6 @@
     border-radius: .25rem;
     transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;
     padding: .375rem .75rem;
-  }
-
-  .user-list{
-    overflow-y: scroll;
-    height: 12em;
   }
 
   textarea{
@@ -56,14 +61,20 @@
     transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;
   }
 
+  #user-list-id,
+  #contact-list-id {
+    padding-left: 0;
+    overflow-y: scroll;
+    height: 12em;
+  }
 
-  li.contact-item, li.user-item{
+  li.contact-item,
+  li.user-item{
     cursor: pointer;
     list-style: none;
   }
 
-  li.contact-item:before,
-  li.user-item:before{
+  li.contact-item:before{
       content: '';
       display: inline-block;
       height: .7em;

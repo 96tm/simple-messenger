@@ -1,230 +1,422 @@
-// globals
-let selectedUsers = new Set();
+"use strict";
+
+// server sends numbers as strings on ajax requests
+
+// constants
+
 const USER_PREFIX = "user-";
 const CONTACT_PREFIX = "contact-";
 const CURRENT_SELECTED = "selected-current-contact";
-const HIDDEN = "hidden-element";
+const SELECTED_ELEMENT = "selected-element";
 const CHECK_MESSAGE_INTERVAL = 3000;
+const VISIBLE = "visible";
+const HIDDEN = "hidden";
+const COLLAPSED = "collapse"; 
+
+const USER_WINDOW_ID = "user-window-id";
+const USER_LIST_ID = "user-list-id";
+const ADD_USER_BUTTON_ID = "add-selected-contacts-id";
+
+const CONTACT_WINDOW_ID = "contact-window-id";
+const CONTACT_LIST_ID = "contact-list-id";
+const REMOVE_CONTACT_BUTTON_ID = "remove-selected-contact-id";
+
+const CHAT_WINDOW_ID = "chat-window-id";
+const CHAT_HEADER_ID = "chat-header-id";
+const MESSAGE_AREA_ID = "message-area-id";
+const MESSAGE_FIELD_ID ="message-field-id";
+const MESSAGE_CLASS = "message";
+const SEND_MESSAGE_BUTTON_ID = "send-message-button-id";
+
+const JSON_CONTENT_TYPE = "application/json";
 
 
-//
-
-function checkNewMessages(lastTimestamp) {
-  // TODO
-}
-
-function hideRemoveContactButton() {
-  button = document.getElementById("remove-selected-contact-id");
-  button.style.visibility = "hidden"
-}
-
-function showRemoveContactButton() {
-  button = document.getElementById("remove-selected-contact-id");
-  button.style.visibility = "visible"
-}
+// classes
 
 
-function showChat() {
-  chat = document.getElementById("chat-wrapper-id");
-  chat.setAttribute("class", 
-                    chat
-                    .getAttribute("class")
-                    .replace(" " + HIDDEN, ""));
-  usersDiv = document.getElementById("contact-search-wrapper-id");
-  contactsDiv = document.getElementById("contact-list-wrapper-id");
-  usersDiv.setAttribute("class", "col-lg-3");
-  contactsDiv.setAttribute("class", "col-lg-3");
-}
+class UserWindow {
+  constructor(userWindowId, userListId, addUserButtonId) {
+    this.USER_PREFIX = "user-";
+    this.LIST_ITEM_CLASS = this.USER_PREFIX + "item";
+    this.FORMAT_SPAN_CLASS = "fa-li";
+    this.FORMAT_I_CLASS = "fas fa-times";
+    this.users = new Set();
+    this.userWindow = document.getElementById(userWindowId);
+    this.userList = document.getElementById(userListId);
+    this.selectedUsers = new Set();
+    this.addUserButton = document.getElementById(addUserButtonId);
+    this.chatWindowReference = null;
+    this.contactWindowReference = null;
+    this.setUsers();
+  }
 
+  setUsers() {
+    for (let index = 0; index < this.userList.children.length; index++) {
+      this.users.add(this.userList.children[index].id.split("-")[1]);
+    }
+  }
 
-function hideChat() {
-  chat = document.getElementById("chat-wrapper-id");
-  chat.setAttribute("class", 
-                    chat
-                    .getAttribute("class") + " " + HIDDEN);
-  usersDiv = document.getElementById("contact-search-wrapper-id");
-  contactsDiv = document.getElementById("contact-list-wrapper-id");
-  usersDiv.setAttribute("class", "col-lg-6");
-  contactsDiv.setAttribute("class", "col-lg-6");
-}
+  setChatWindowReference(chatWindowReference) {
+    this.chatWindowReference = chatWindowReference;
+  }
 
+  setContactWindowReference(contactWindowReference) {
+    this.contactWindowReference = contactWindowReference;
+  }
 
-function addUser(container, username, userId, prefix){
-  let listItem = document.createElement("li");
-  let formatSpan = document.createElement("span");
-  let usernameSpan = document.createElement("span");
-  let formatI = document.createElement("i");
-  listItem.setAttribute("class", prefix + "item");
-  listItem.id = prefix + userId;
-  formatSpan.setAttribute("class", "fa-li");
-  formatI.setAttribute("class", "fas fa-times");
-  usernameSpan.innerText = username;
-  formatSpan.appendChild(formatI);
-  listItem.appendChild(formatSpan);
+  setClass(className) {
+    this.userWindow.setAttribute("class", className);
+  }
+
+  getClass() {
+    return this.userWindow.getAttribute("class");
+  }
+
+  updateAddUserButton() {
+    if (this.selectedUsers.size) {
+      this.addUserButton.style.visibility = VISIBLE;
+    }
+    else {
+      this.addUserButton.style.visibility = HIDDEN;
+    }
+  };
   
-  listItem.appendChild(usernameSpan);
-  container.appendChild(listItem);
+  removeUser(userId) {
+    if (this.users.has(userId)) { // INT OR STRING?
+        const listItem = document.getElementById(this.USER_PREFIX + userId);
+        this.userList.removeChild(listItem);
+        this.users.delete(userId);
+        this.selectedUsers.delete(userId);
+    }
+  };
+
+  addUser(username, userId) {
+    if (!this.users.has(userId)) {
+        let listItem = document.createElement("li");
+        let formatSpan = document.createElement("span");
+        let usernameSpan = document.createElement("span");
+        let formatI = document.createElement("i");
+        listItem.setAttribute("class", this.LIST_ITEM_CLASS);
+        listItem.id = this.USER_PREFIX + userId;
+        formatSpan.setAttribute("class", this.FORMAT_SPAN_CLASS);
+        formatI.setAttribute("class", this.FORMAT_I_CLASS);
+        usernameSpan.innerText = username;
+        formatSpan.appendChild(formatI);
+        listItem.appendChild(formatSpan);
+        listItem.appendChild(usernameSpan);
+        this.userList.appendChild(listItem);
+
+        this.users.add(userId);
+    }
+  };
 }
 
-
-function updateAddContactButton() {
-  const buttonAdd = document
-                    .getElementById("add-selected-contacts-id");
-  if (selectedUsers.size) {
-    buttonAdd.style.visibility = "visible";
+class ContactWindow {
+  constructor(contactWindowId, contactListId, 
+              removeContactButtonId) {
+    this.CONTACT_PREFIX = "contact-";
+    this.LIST_ITEM_CLASS = this.CONTACT_PREFIX + "item";
+    this.FORMAT_SPAN_CLASS = "fa-li";
+    this.FORMAT_I_CLASS = "fas fa-times";
+    this.contacts = new Set();
+    this.contactWindow = document.getElementById(contactWindowId);
+    this.contactList = document.getElementById(contactListId);
+    this.removeContactButton = document.getElementById(removeContactButtonId);
+    this.instanceReference = this;
+    this.selectedContact = null;
+    this.chatWindowReference = null;
+    this.userWindowReference = null;
+    this.setContacts();
   }
-  else {
-    buttonAdd.style.visibility = "hidden";
+
+  setContacts() {
+    for (let index = 0; index < this.contactList.children.length; index++) {
+      this.contacts.add(this.contactList.children[index].id.split("-")[1]);
+    }
   }
-}
 
+  chooseContact(currentUsername, contactUsername, contactId, messages) {
+    let lastSelected = this.selectedContact;
+    this.selectedContact = document
+                            .getElementById(CONTACT_PREFIX
+                                            + contactId);
+    if (lastSelected) {
+          lastSelected
+          .setAttribute("class", 
+                        lastSelected
+                        .getAttribute("class")
+                        .replace(" " + CURRENT_SELECTED, ""));
+    }
+    
+    if (!lastSelected
+        || !(lastSelected.id.split("-")[1] === contactId)) {
+              this
+              .selectedContact
+              .setAttribute("class", 
+                            (this.selectedContact
+                            .getAttribute("class") 
+                              + " "
+                              + CURRENT_SELECTED));
+              this.chatWindowReference.add_messages(currentUsername, contactUsername, messages);
+              this.chatWindowReference.setChatHeader(contactUsername);
+              this.chatWindowReference.show();
 
-function removeUser(container, userId, prefix) {
-  listItem = document.querySelector("#" + prefix + userId);
-  container.removeChild(listItem);
-}
+              this.showRemoveContactButton();
+    } else {
+        this.hideRemoveContactButton();
+        this.chatWindowReference.hide();
+        this.selectedContact = null;
+    }   
+  };
 
+  choose_contact(contactId) {
+    let request = new XMLHttpRequest();
+    request.open("POST", "/choose_contact", true);
+    request.setRequestHeader("Content-Type", JSON_CONTENT_TYPE);
 
-function remove_contact(contactId) {
-  request = new XMLHttpRequest();
-  request.open("POST", "/remove_contact", true);
-  request.setRequestHeader("Content-Type", "application/json");
-  request.onload = function() {
-    try {
-      if (request.readyState === request.DONE) {
-        if (request.status === 200) {
-          let response = JSON.parse(request.response);
-          let contact = response["removed_contact"];
-          let contactId = contact["contact_id"];
-          let username = contact["username"];
-          let userList = document.getElementById("user-list-id");
-          let contactList = document.getElementById("contact-list-id");
+    let thisReference = this;
 
-          hideRemoveContactButton();
-          hideChat();
-          addUser(userList, username, contactId, USER_PREFIX);
-          removeUser(contactList, contactId, CONTACT_PREFIX);
+    request.onload = (function() {
+        try {
+            if (request.readyState === request.DONE) {
+              if (request.status === 200) {
+                const response = JSON.parse(request.response);
+                const messages = response["messages"];
+                const contactUsername = response["contact_username"];
+                const currentUsername = response["current_username"];
+                thisReference.chooseContact(currentUsername, contactUsername, contactId, messages);
+              } else {
+                alert("There was a problem with the request.");
+              }
+            }
+          }
+          catch(e) {
+            alert("Caught Exception: " + e.description);
+            console.log("Caught Exception: " + e.description);
+            console.log("Exception: " + e);
+          }
+    }).bind(this);
+    request.send(JSON.stringify({"contact_id": contactId}));
+  };
+
+  addContact(username, contactId) {
+    if (!this.contacts.has(contactId)) { // INT OR STRING?
+        let listItem = document.createElement("li");
+        let formatSpan = document.createElement("span");
+        let usernameSpan = document.createElement("span");
+        let formatI = document.createElement("i");
+        listItem.setAttribute("class", this.LIST_ITEM_CLASS);
+        listItem.id = this.CONTACT_PREFIX + contactId;
+        formatSpan.setAttribute("class", this.FORMAT_SPAN_CLASS);
+        formatI.setAttribute("class", this.FORMAT_I_CLASS);
+        usernameSpan.innerText = " " + username;
+        formatSpan.appendChild(formatI);
+        listItem.appendChild(formatSpan);
+        this.contacts.add(contactId); // INT OF STRING?
+        
+        listItem.appendChild(usernameSpan);
+        this.contactList.appendChild(listItem);
+
+        this.userWindowReference.removeUser(contactId);
+    }
+  };
+
+  addContacts(addedContacts) {
+    for (let index = 0; index < addedContacts.length; index++) {
+      const contact = addedContacts[index];
+      const username = contact["username"];
+      const contactId = contact["contact_id"];
+      this.addContact(username, contactId);
+    }
+    this.userWindowReference.updateAddUserButton();
+  };
+
+  add_contacts(contactIds) {
+    if (this.userWindowReference.selectedUsers.size) {
+      let request = new XMLHttpRequest();
+      request.open("POST", "/add_contacts", true);
+      request.setRequestHeader("Content-Type", JSON_CONTENT_TYPE);
+
+      let thisReference = this;
+
+      request.onload = function() {
+        try {
+          if (request.readyState === request.DONE) {
+            if (request.status === 200) {
+              const response = JSON.parse(request.response);
+              const addedContacts = response["added_contacts"];
+              thisReference.addContacts(addedContacts);
+            } else {
+                alert("There was a problem with the request.");
+            }
+          }
         }
-        else {
-          alert('There was a problem with the request.');
+        catch(e) {
+          alert("Caught Exception: " + e.description);
+          console.log("Caught Exception: " + e.description);
         }
       }
+      request.send(JSON.stringify({contact_ids: contactIds}))
     }
-    catch(e) {
-      alert('Caught Exception: ' + e.description);
-      console.log('Caught Exception: ' + e.description);
+  };
+
+  setClass(className) {
+    this.contactWindow.setAttribute("class", className);
+  };
+
+  getClass() {
+    return this.contactWindow.getAttribute("class");
+  };
+
+  setChatWindowReference(chatWindowReference) {
+    this.chatWindowReference = chatWindowReference;
+  };
+
+  setUserWindowReference(userWindowReference) {
+    this.userWindowReference = userWindowReference;
+  };
+
+  showRemoveContactButton() {
+    this.removeContactButton.style.visibility = VISIBLE;
+  };
+
+  hideRemoveContactButton() {
+    this.removeContactButton.style.visibility = HIDDEN;
+  };
+
+  removeContact(username, contactId) {
+    if (this.contacts.has(contactId)) {
+
+        const listItem = document.getElementById(this.CONTACT_PREFIX + contactId);
+        
+        this.contactList.removeChild(listItem);
+        this.contacts.delete(contactId); // INT OR STRING?
+        this.selectedContact = null;
+        this.hideRemoveContactButton();
+
+        this.userWindowReference.addUser(username, contactId);
+        this.chatWindowReference.hide();
     }
-  }
-  request.send(JSON.stringify({contact_id: contactId}))
-}
+  };
 
+  remove_contact(contactId) {
+    let request = new XMLHttpRequest();
+    request.open("POST", "/remove_contact", true);
+    request.setRequestHeader("Content-Type", JSON_CONTENT_TYPE);
 
-function add_contacts(contactIds) {
-  if (selectedUsers.size) {
-    request = new XMLHttpRequest();
-    request.open("POST", "/add_contacts", true);
-    request.setRequestHeader("Content-Type", "application/json");
+    let thisReference = this;
+
     request.onload = function() {
       try {
         if (request.readyState === request.DONE) {
           if (request.status === 200) {
-
-            let response = JSON.parse(request.response);
-            let addedContacts = response["added_contacts"];
-            for (index = 0; index < addedContacts.length; index++) {
-              let contact = addedContacts[index];
-              let username = contact["username"];
-              let contactId = String(contact["contact_id"]);
-              let userList = document.getElementById("user-list-id");
-              let contactList = document.getElementById("contact-list-id");
-              addUser(contactList, username, contactId, CONTACT_PREFIX);
-              removeUser(userList, contactId, USER_PREFIX);
-              selectedUsers.delete(contactId);
-              updateAddContactButton();
-            }
-          } else {
-            alert('There was a problem with the request.');
+            const response = JSON.parse(request.response);
+            const contact = response["removed_contact"];
+            const contactId = contact["contact_id"];
+            const username = contact["username"];
+  
+            thisReference.removeContact(username, contactId);
+          }
+          else {
+            alert("There was a problem with the request.");
+            console.log("There was a problem with the request.");
+            console.log(JSON.parse(request));
           }
         }
       }
       catch(e) {
-        alert('Caught Exception: ' + e.description);
-        console.log('Caught Exception: ' + e.description);
+        alert("Caught Exception: " + e.description);
+        console.log("Caught Exception: " + e.description);
       }
-
     }
-    request.send(JSON.stringify({contact_ids: contactIds}))
-  }
+    request.send(JSON.stringify({contact_id: contactId}))
+  };
 }
 
-function scrollMessageAreaToBottom() {
-  let messageArea = document.getElementById("message-area-id");
-    if (messageArea) {
-      messageArea.scrollTo(0, messageArea.scrollHeight);
+class ChatWindow {
+  constructor(chatWindowId, messageAreaId,
+              messageFieldId, sendMessageButtonId, chatHeaderId) {
+    this.COLUMN_3 = "col-lg-3";
+    this.CENTER_FROM_LEFT = "center-from-left";
+    this.CENTER_FROM_RIGHT = "center-from-right";
+    this.CHAT_HEADER_PREFIX = "Chat with ";
+    this.chatWindow = document.getElementById(chatWindowId);
+    this.chatHeader = document.getElementById(chatHeaderId);
+    this.messageArea =  document.getElementById(messageAreaId);
+    this.messageField = document.getElementById(messageFieldId);
+    this.sendMessageButton = document.getElementById(sendMessageButtonId);
+    this.contactWindowReference = null;
+    this.userWindowReference = null;
+  }
+
+  setChatHeader(header) {
+    this.chatHeader.innerText = this.CHAT_HEADER_PREFIX + header;
+  }
+
+  add_message(currentUsername, contactUsername, message) {
+    const text = message["text"];
+    const timestamp = message["timestamp"];
+    let username;
+    if (message["sender_username"] === currentUsername) {
+        username = "You";
     }
-}
+    else {
+        username = contactUsername;
+    }
+    let messageDiv = document.createElement("div");
+    let messageSpan = document.createElement("span");
+    let timestampSpan = document.createElement("span");
+    let textSpan = document.createElement("span");
+    const b = document.createElement("b");
+    const br = document.createElement("br");
+    b.innerText = username + " ";
+    textSpan.innerText = text;
+    timestampSpan.innerText = timestamp + "\n";
+    messageSpan.appendChild(b);
+    messageSpan.appendChild(timestampSpan);
+    messageSpan.appendChild(br);
+  
+    messageDiv.appendChild(messageSpan);
+    messageDiv.appendChild(br);
+    messageDiv.appendChild(textSpan);
+    messageDiv.setAttribute("class", "message");
+  
+    this.messageArea.appendChild(messageDiv);
+    this.messageArea.appendChild(br);
+    this.scrollDown();
+  };
 
-function add_message(messageArea, currentUsername, contactUsername, message) {
-  let text = message["text"];
-  let timestamp = message["timestamp"];
-  let username;
-  if (message["sender_username"] === currentUsername) {
-      username = "You";
-  }
-  else {
-      username = contactUsername;
-  }
-  let messageDiv = document.createElement("div");
-  let messageSpan = document.createElement("span");
-  let timestampSpan = document.createElement("span");
-  let textSpan = document.createElement("span");
-  let b = document.createElement("b");
-  let br = document.createElement("br");
-  b.innerText = username + " ";
-  textSpan.innerText = text;
-  timestampSpan.innerText = timestamp + "\n";
-  messageSpan.appendChild(b);
-  messageSpan.appendChild(timestampSpan);
-  messageSpan.appendChild(br);
 
-  messageDiv.appendChild(messageSpan);
-  messageDiv.appendChild(br);
-  messageDiv.appendChild(textSpan);
-  messageDiv.setAttribute("class", "message");
-
-  messageArea.appendChild(messageDiv);
-  messageArea.appendChild(br);
-  scrollMessageAreaToBottom();
-}   
-
-function send_message(recipient_id, message_text){
-    let text = message_text.trim();
+  send_message(recipient_id, message_text){
+    const text = message_text.trim();
     if (text) {
         let request = new XMLHttpRequest();
         request.open("POST", "/send_message", true);
-        request.setRequestHeader("Content-Type", "application/json");
-        request.setRequestHeader("Content-Encoding", "UTF-8");
+        request.setRequestHeader("Content-Type", JSON_CONTENT_TYPE);
+
+        let thisReference = this;
+
         request.onload = function(){
             try {
                 if (request.readyState === request.DONE) {
                   if (request.status === 200) {
-                    let response = JSON.parse(request.response);
-                    let message = response["message"];
-                    let contactUsername = response["contact_username"];
-                    let currentUsername = response["current_username"];
-                    let messageArea = document
-                                      .getElementById("message-area-id");
-                    document.getElementById("message-field-id").value = "";
-                    add_message(messageArea, currentUsername, 
-                                contactUsername, message);
+                    const response = JSON.parse(request.response);
+                    const message = response["message"];
+                    const contactUsername = response["contact_username"];
+                    const currentUsername = response["current_username"];
+
+                    thisReference.messageField.value = "";
+                    
+                    thisReference.add_message(currentUsername,
+                                     contactUsername, message);
                   } else {
-                    alert('There was a problem with the request.');
+                    alert("There was a problem with the request.");
                   }
                 }
               }
               catch(e) {
-                alert('Caught Exception: ' + e.description);
-                console.log('Caught Exception: ' + e.description);
+                alert("Caught Exception: " + e.description);
+                console.log("Caught Exception: " + e.description);
               }
         }
         let data = {
@@ -233,179 +425,178 @@ function send_message(recipient_id, message_text){
                    };
         request.send(JSON.stringify(data));
     }
-}
+  }
 
-function add_messages(currentUsername, contactUsername, messages) {
-    let messageArea = document.getElementById("message-area-id");
-    messageArea.innerHTML = "";
+  add_messages(currentUsername, contactUsername, messages) {
+
+    this.messageArea.innerHTML = "";
+    
     for (let index = 0; index < messages.length; index++) {
-        message = messages[index];
-        add_message(messageArea, currentUsername, contactUsername, message);
+        const message = messages[index];
+        this.add_message(currentUsername, contactUsername, message);
     }
-}   
+  };
 
-function choose_contact(contactId) {
-    let request = new XMLHttpRequest();
-    request.open("POST", "/choose_contact", true);
-    request.setRequestHeader("Content-Type", "application/json");
-    request.setRequestHeader("Content-Encoding", "UTF-8");
-    request.onload = function() {
-        try {
-            if (request.readyState === request.DONE) {
-              if (request.status === 200) {
-                let response = JSON.parse(request.response);
-                let messages = response["messages"];
-                let contactUsername = response["contact_username"];
-                let currentUsername = response["current_username"];
-                let contactsDiv;
-                contactsDiv = document
-                              .getElementById("contact-search-wrapper-id");
-                let contactList;
-                contactList = document
-                              .getElementById("contact-list-wrapper-id");
-                const chatWrapper = document
-                                    .getElementById("chat-wrapper-id");
-                contactsDiv.setAttribute("class", "col-lg-3");
-                contactList.setAttribute("class", "col-lg-3");
-                chatWrapper.setAttribute("class", 
-                                         chatWrapper
-                                         .getAttribute("class")
-                                         .replace(" hidden-element", ""));
-                let selectedContact = document
-                                      .getElementById("contact-" + contactId);
-                let lastSelected;
-                lastSelected = document
-                               .querySelector("." + CURRENT_SELECTED);
-                if (lastSelected) {
-                      lastSelected
-                      .setAttribute("class", 
-                                    lastSelected
-                                    .getAttribute("class")
-                                    .replace(" " + CURRENT_SELECTED, ""));
-                }
-                
-                if (!lastSelected
-                    || !(lastSelected.id.split("-")[1] === contactId)) {
-                          selectedContact
-                          .setAttribute("class", 
-                                        (selectedContact
-                                        .getAttribute("class") 
-                                         + " " 
-                                         + CURRENT_SELECTED));
-                          add_messages(currentUsername,
-                                       contactUsername, messages);
-                          showChat();
-                          showRemoveContactButton();
-                } else {
-                  hideChat();
-                  hideRemoveContactButton();
-                }
-              } else {
-                alert("There was a problem with the request.");
-              }
-            }
-          }
-          catch(e) {
-            alert("Caught Exception: " + e.description);
-          }
-    }
-    request.send(JSON.stringify({"contact_id": contactId}));
+  setContactWindowReference(contactWindowReference) {
+    this.contactWindowReference = contactWindowReference;
+  };
+
+  setUserWindowReference(userWindowReference) {
+    this.userWindowReference = userWindowReference;
+  };
+  
+  getClass() {
+    this.chatWindow.getAttribute("class");
+  };
+
+  setClass(className) {
+    this.chatWindow.setAttribute("class", className);
+  };
+
+  addClass(className) {
+    this.chatWindow.setAttribute("class",
+                           this.getClass() + " " + className);
+  };
+
+  removeClass(className) {
+    this.chatWindow.setAttribute("class", 
+                                 this.getClass()
+                                     .replace(" " + className, ""));
+  };
+
+  scrollDown() {
+    this.messageArea.scrollTo(0, this.messageArea.scrollHeight);
+  };
+
+  show() {
+    this.chatWindow.style.display = "block";
+    this.userWindowReference.setClass(this.COLUMN_3);
+    this.contactWindowReference.setClass(this.COLUMN_3);
+  };
+
+  hide() {
+    this.chatWindow.style.display = "none";
+    this.userWindowReference.setClass(this.COLUMN_3
+                                      + " " + this.CENTER_FROM_LEFT);
+    this.contactWindowReference.setClass(this.COLUMN_3 
+                                         + " " + this.CENTER_FROM_RIGHT);
+  };
 }
 
 
-// event listeners
-
-document
-.getElementById("add-selected-contacts-id")
-.addEventListener("click", function () {
-    add_contacts(Array.from(selectedUsers));
-});
-
-document
-.getElementById("send-message-button-id")
-.addEventListener("click", function(){
-    const selectedCurrentContact = document
-                                   .querySelector("." + CURRENT_SELECTED);
-    if (selectedCurrentContact) {
-      const recipient_id = selectedCurrentContact.id.split("-")[1];
-      const message_text = document
-                           .getElementById('message-field-id').value;
-      send_message(recipient_id, message_text);
-    }
-    else {
-      console.log("Can't send message: no contact is selected");
-    }
-});
+function checkNewMessages(lastTimestamp) {
+  // TODO
+}
 
 
-document
-.getElementById("contact-list-id")
-.addEventListener("click", function(event) {
-    if (event.target.tagName.toLowerCase() === "li") {
-        elementId = event.target.id.split("-")[1];
-        choose_contact(elementId);
-    }
-    else if (event.target.tagName.toLowerCase() === "span") {
-        parentElementId = event.target.parentElement.id.split("-")[1];
-        choose_contact(parentElementId);
-    }
-  });
+//////////// driver
+
+    let chatWindow = new ChatWindow(CHAT_WINDOW_ID, 
+                                    MESSAGE_AREA_ID, MESSAGE_FIELD_ID,
+                                    SEND_MESSAGE_BUTTON_ID, CHAT_HEADER_ID);
+    let userWindow = new UserWindow(USER_WINDOW_ID,
+                                USER_LIST_ID,
+                                ADD_USER_BUTTON_ID);
+    let contactWindow = new ContactWindow(CONTACT_WINDOW_ID,
+                                      CONTACT_LIST_ID,
+                                      REMOVE_CONTACT_BUTTON_ID);
+
+    chatWindow.setContactWindowReference(contactWindow);
+    chatWindow.setUserWindowReference(userWindow);
+    userWindow.setContactWindowReference(contactWindow);
+    userWindow.setChatWindowReference(chatWindow);
+    contactWindow.setUserWindowReference(userWindow);
+    contactWindow.setChatWindowReference(chatWindow);
+    
+    userWindow
+    .addUserButton
+    .addEventListener("click", function () {
+        contactWindow.add_contacts(Array.from(userWindow.selectedUsers));
+    });
+
+    contactWindow
+    .removeContactButton
+    .addEventListener("click", function() {
+        if (contactWindow.selectedContact) {
+            contactWindow.remove_contact(contactWindow
+                                         .selectedContact
+                                         .id
+                                         .split("-")[1]);
+        }
+    });
+
+    chatWindow
+    .sendMessageButton
+    .addEventListener("click", function(){
+        if (contactWindow.selectedContact) {
+            const recipient_id = contactWindow.selectedContact.id.split("-")[1];
+            const message_text = chatWindow.messageField.value;
+            chatWindow.send_message(recipient_id, message_text);
+        }
+        else {
+             console.log("Can't send the message: no contact selected");
+        }
+    });
 
 
-document
-.getElementById("user-list-id")
-.addEventListener("click", function(event) {
-  const item = event.target;
-  if (item.tagName.toLowerCase() === "li") {
-    const itemClass = item.getAttribute("class");
-    const itemId = item.id.split("-")[1];
-    if (itemClass.includes("selected-element")) {
-          selectedUsers.delete(itemId);
-          item.setAttribute("class", 
-                            itemClass
-                            .replace(" selected-element", ""));
-    }
-    else {
-          selectedUsers.add(itemId);
-          item.setAttribute("class", itemClass + " selected-element");
-    }
-  }
-  else if (item.tagName.toLowerCase() === "span") {
-    const parent = item.parentElement;
-    const itemParentClass = parent.getAttribute("class");
-    const itemParentId = parent.id.split("-")[1];
-    if (itemParentClass.includes("selected-element")) {
-          selectedUsers.delete(itemParentId);
-          parent.setAttribute("class", 
-                              itemParentClass
-                              .replace(" selected-element", ""));
-    }
-    else {
-          selectedUsers.add(itemParentId);
-          parent.setAttribute("class", 
-                              itemParentClass + " selected-element");
-    }
-  }
-  updateAddContactButton();
-});
+    contactWindow
+    .contactList
+    .addEventListener("click", function(event) {
+        if (event.target.tagName.toLowerCase() === "li") {
+            const elementId = event.target.id.split("-")[1];
+            contactWindow.choose_contact(elementId);
+        }
+        else if (event.target.tagName.toLowerCase() === "span") {
+            const parentElementId = event.target.parentElement.id.split("-")[1];
+            contactWindow.choose_contact(parentElementId);
+        }
+    });
 
-document
-.getElementById("remove-selected-contact-id")
-.addEventListener("click", function() {
-  selected = document.querySelector("." + CURRENT_SELECTED);
-  if (selected) {
-    remove_contact(selected.id.split("-")[1]);
-  }
-});
+    userWindow
+    .userList
+    .addEventListener("click", function(event) {
+        const item = event.target;
+        if (item.tagName.toLowerCase() === "li") {
+            const itemClass = item.getAttribute("class");
+            const itemId = item.id.split("-")[1];
+            if (itemClass.includes(SELECTED_ELEMENT)) {
+                userWindow.selectedUsers.delete(itemId);
+                item.setAttribute("class", 
+                                    itemClass
+                                    .replace(" " + SELECTED_ELEMENT, ""));
+            }
+            else {
+                userWindow.selectedUsers.add(itemId);
+                item.setAttribute("class", itemClass + " " + SELECTED_ELEMENT);
+            }
+        }
+        else if (item.tagName.toLowerCase() === "span") {
+            const parent = item.parentElement;
+            const itemParentClass = parent.getAttribute("class");
+            const itemParentId = parent.id.split("-")[1];
+            if (itemParentClass.includes(SELECTED_ELEMENT)) {
+                userWindow.selectedUsers.delete(itemParentId);
+                parent.setAttribute("class", 
+                                    itemParentClass
+                                    .replace(" " + SELECTED_ELEMENT, ""));
+            }
+            else {
+                userWindow.selectedUsers.add(itemParentId);
+                parent.setAttribute("class", 
+                                    itemParentClass + " " + SELECTED_ELEMENT);
+            }
+        }
+        userWindow.updateAddUserButton();
+    });
 
-window
-.addEventListener("load", function() {
-  scrollMessageAreaToBottom();
-  console.log('selected here' + Boolean(document.querySelector("." + CURRENT_SELECTED)));
-  if (document.querySelector("." + CURRENT_SELECTED)) {
-    showRemoveContactButton();
-  }
-});
+    window
+    .addEventListener("load", function() {
+        chatWindow.scrollDown();
 
-
-
+        contactWindow
+        .selectedContact = document.querySelector("." + CURRENT_SELECTED);
+        
+        if (contactWindow.selectedContact) {
+          contactWindow.showRemoveContactButton();
+        }
+    });
