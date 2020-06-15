@@ -1,6 +1,6 @@
 import os
 from app import create_app, database
-from app.models import User, Role
+from app.models import User, Role, Contact, Message
 from flask_script import Manager, Shell
 from flask_migrate import Migrate, MigrateCommand
 from datetime import datetime
@@ -19,7 +19,11 @@ def test():
     unittest.TextTestRunner(verbosity=2).run(tests)
 
 def make_shell_context():
-    return dict(app=wsgi_application, User=User, Role=Role, db=database)
+    return dict(app=wsgi_application,
+                User=User, Role=Role, db=database,
+                Contact=Contact, Message=Message,
+                bob=User.query.filter_by(username='bob'),
+                arthur=User.query.filter_by(username='Arthur'))
 
 manager.add_command('shell', Shell(make_context=make_shell_context))
 manager.add_command('database', MigrateCommand)

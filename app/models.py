@@ -14,6 +14,17 @@ def load_user(user_id):
     return User.query.get(int(user_id))
 
 
+def add_test_data():
+    bob = User(username='bob', email='bob@bob.bob', password='bob', confirmed=True)
+    arthur = User(username='arthur', email='arthur@arthur.arthur', password='arthur', confirmed=True)
+    morgana = User(username='morgana', email='morgana@morgana.morgana', password='morgana', confirmed=True)
+    clair = User(username='clair', email='clair@clair.clair', password='clair', confirmed=True)
+    merlin = User(username='merlin', email='merlin@merlin.merlin', password='merlin', confirmed=True)
+    ophelia = User(username='ophelia', email='ophelia@ophelia.ophelia', password='ophelia', confirmed=True)
+    database.session.add_all([bob, arthur, morgana, clair, merlin, ophelia])
+    database.session.commit()
+
+
 class Role(database.Model):
     __tablename__ = 'roles'
     id = database.Column(database.Integer, primary_key=True)
@@ -166,6 +177,8 @@ class AnonymousUser(AnonymousUserMixin):
 class Message(database.Model):
     __tablename__ = 'messages'
     id = database.Column(database.Integer, primary_key = True)
+    was_read = database.Column(database.Boolean,
+                               default=False)
     text = database.Column(database.Text)
     message_date = database.Column(database.DateTime,
                                    nullable=False,

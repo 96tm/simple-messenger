@@ -3,6 +3,7 @@
 // server sends numbers as strings on ajax requests
 
 // constants
+const POLLING_TIMEOUT = 3000;
 
 const USER_PREFIX = "user-";
 const CONTACT_PREFIX = "contact-";
@@ -29,6 +30,20 @@ const MESSAGE_CLASS = "message";
 const SEND_MESSAGE_BUTTON_ID = "send-message-button-id";
 
 const JSON_CONTENT_TYPE = "application/json";
+
+
+function logFailedAjaxRequest(request) {
+  alert("There was a problem with the request.");
+  console.log("There was a problem with the request.");
+  console.log("Request status: " + request.status);
+  console.log("Response: " + JSON.parse(request.response));
+}
+
+function logException(exception) {
+  alert("Caught Exception: " + e.description);
+  console.log("Caught Exception: " + e.description);
+  console.log("Exception: " + e);
+}
 
 
 // classes
@@ -112,7 +127,8 @@ class UserWindow {
 }
 
 class ContactWindow {
-  constructor(contactWindowId, contactListId, 
+  constructor(contactWindowId, 
+              contactListId,
               removeContactButtonId) {
     this.CONTACT_PREFIX = "contact-";
     this.LIST_ITEM_CLASS = this.CONTACT_PREFIX + "item";
@@ -122,10 +138,10 @@ class ContactWindow {
     this.contactWindow = document.getElementById(contactWindowId);
     this.contactList = document.getElementById(contactListId);
     this.removeContactButton = document.getElementById(removeContactButtonId);
-    this.instanceReference = this;
     this.selectedContact = null;
     this.chatWindowReference = null;
     this.userWindowReference = null;
+
     this.setContacts();
   }
 
@@ -133,7 +149,7 @@ class ContactWindow {
     for (let index = 0; index < this.contactList.children.length; index++) {
       this.contacts.add(this.contactList.children[index].id.split("-")[1]);
     }
-  }
+  };
 
   chooseContact(currentUsername, contactUsername, contactId, messages) {
     let lastSelected = this.selectedContact;
@@ -157,7 +173,7 @@ class ContactWindow {
                             .getAttribute("class") 
                               + " "
                               + CURRENT_SELECTED));
-              this.chatWindowReference.add_messages(currentUsername, contactUsername, messages);
+              this.chatWindowReference.addMessages(currentUsername, contactUsername, messages);
               this.chatWindowReference.setChatHeader(contactUsername);
               this.chatWindowReference.show();
 
@@ -186,14 +202,12 @@ class ContactWindow {
                 const currentUsername = response["current_username"];
                 thisReference.chooseContact(currentUsername, contactUsername, contactId, messages);
               } else {
-                alert("There was a problem with the request.");
+                logFailedAjaxRequest(request);
               }
             }
           }
           catch(e) {
-            alert("Caught Exception: " + e.description);
-            console.log("Caught Exception: " + e.description);
-            console.log("Exception: " + e);
+            logException(e);
           }
     }).bind(this);
     request.send(JSON.stringify({"contact_id": contactId}));
@@ -247,13 +261,12 @@ class ContactWindow {
               const addedContacts = response["added_contacts"];
               thisReference.addContacts(addedContacts);
             } else {
-                alert("There was a problem with the request.");
+              logFailedAjaxRequest(request);
             }
           }
         }
         catch(e) {
-          alert("Caught Exception: " + e.description);
-          console.log("Caught Exception: " + e.description);
+          logException(e);
         }
       }
       request.send(JSON.stringify({contact_ids: contactIds}))
@@ -318,15 +331,12 @@ class ContactWindow {
             thisReference.removeContact(username, contactId);
           }
           else {
-            alert("There was a problem with the request.");
-            console.log("There was a problem with the request.");
-            console.log(JSON.parse(request));
+            logFailedAjaxRequest(request);
           }
         }
       }
       catch(e) {
-        alert("Caught Exception: " + e.description);
-        console.log("Caught Exception: " + e.description);
+        logException(e);
       }
     }
     request.send(JSON.stringify({contact_id: contactId}))
@@ -347,14 +357,36 @@ class ChatWindow {
     this.sendMessageButton = document.getElementById(sendMessageButtonId);
     this.contactWindowReference = null;
     this.userWindowReference = null;
+    this.setIntervalHandle = null;
   }
+
+  startMessagePolling() {
+    let thisReference = this;
+    this.setIntervalHandle = window
+                             .setInterval(this
+                                          .checkNewMessagesAjax
+                                          .bind(thisReference),
+                                          POLLING_TIMEOUT,
+                                          this
+                                          .contactWindowReference
+                                          .selectedContact
+                                          .id
+                                          .split("-")[1]
+    );
+  };
+
+  stopMessagePolling() {
+    clearInterval(this.setIntervalHandle);
+    this.setIntervalHandle = null;
+  };
 
   setChatHeader(header) {
     this.chatHeader.innerText = this.CHAT_HEADER_PREFIX + header;
-  }
+  };
 
-  add_message(currentUsername, contactUsername, message) {
+  addMessage(currentUsername, contactUsername, message) {
     const text = message["text"];
+
     const timestamp = message["timestamp"];
     let username;
     if (message["sender_username"] === currentUsername) {
@@ -380,10 +412,55 @@ class ChatWindow {
     messageDiv.appendChild(br);
     messageDiv.appendChild(textSpan);
     messageDiv.setAttribute("class", "message");
-  
+    
     this.messageArea.appendChild(messageDiv);
     this.messageArea.appendChild(br);
     this.scrollDown();
+  };
+
+  addMessages(currentUsername, contactUsername, messages, clearArea = true) {
+    if (clearArea) {
+      this.messageArea.innerHTML = "";
+    }
+    
+    for (let index = 0; index < messages.length; index++) {
+        const message = messages[index];
+        this.addMessage(currentUsername, contactUsername, message);
+    }
+  };
+
+
+  checkNewMessagesAjax(currentContactId) {
+    let request = new XMLHttpRequest();
+    request.open("POST", "/check_new_messages", true);
+    request.setRequestHeader("Content-Type", JSON_CONTENT_TYPE);
+
+    let thisReference = this;
+
+    request.onload = function(){
+      try {
+          if (request.readyState === request.DONE) {
+            if (request.status === 200) {
+              const response = JSON.parse(request.response);
+              const messages = response["messages"];
+              const contactUsername = response["contact_username"];
+              const currentUsername = response["current_username"];
+              thisReference.addMessages(currentUsername,
+                                         contactUsername,
+                                         messages, false);
+            } else {
+              logFailedAjaxRequest(request);
+            }
+          }
+        }
+        catch(e) {
+          logException(e);
+        }
+    }
+    const data = {
+                   contact_id: currentContactId
+                 };
+    request.send(JSON.stringify(data));
   };
 
 
@@ -407,16 +484,15 @@ class ChatWindow {
 
                     thisReference.messageField.value = "";
                     
-                    thisReference.add_message(currentUsername,
+                    thisReference.addMessage(currentUsername,
                                      contactUsername, message);
                   } else {
-                    alert("There was a problem with the request.");
+                    logFailedAjaxRequest(request);
                   }
                 }
               }
               catch(e) {
-                alert("Caught Exception: " + e.description);
-                console.log("Caught Exception: " + e.description);
+                logException(e);
               }
         }
         let data = {
@@ -424,16 +500,6 @@ class ChatWindow {
                         recipient_id: recipient_id
                    };
         request.send(JSON.stringify(data));
-    }
-  }
-
-  add_messages(currentUsername, contactUsername, messages) {
-
-    this.messageArea.innerHTML = "";
-    
-    for (let index = 0; index < messages.length; index++) {
-        const message = messages[index];
-        this.add_message(currentUsername, contactUsername, message);
     }
   };
 
@@ -469,12 +535,14 @@ class ChatWindow {
   };
 
   show() {
+    this.startMessagePolling();
     this.chatWindow.style.display = "block";
     this.userWindowReference.setClass(this.COLUMN_3);
     this.contactWindowReference.setClass(this.COLUMN_3);
   };
 
   hide() {
+    this.stopMessagePolling();
     this.chatWindow.style.display = "none";
     this.userWindowReference.setClass(this.COLUMN_3
                                       + " " + this.CENTER_FROM_LEFT);
@@ -483,120 +551,117 @@ class ChatWindow {
   };
 }
 
+/* ----------------
+driver
+-----------------*/
 
-function checkNewMessages(lastTimestamp) {
-  // TODO
-}
+let chatWindow = new ChatWindow(CHAT_WINDOW_ID, 
+                                MESSAGE_AREA_ID, MESSAGE_FIELD_ID,
+                                SEND_MESSAGE_BUTTON_ID, CHAT_HEADER_ID);
+let userWindow = new UserWindow(USER_WINDOW_ID,
+                            USER_LIST_ID,
+                            ADD_USER_BUTTON_ID);
+let contactWindow = new ContactWindow(CONTACT_WINDOW_ID,
+                                  CONTACT_LIST_ID,
+                                  REMOVE_CONTACT_BUTTON_ID);
+
+chatWindow.setContactWindowReference(contactWindow);
+chatWindow.setUserWindowReference(userWindow);
+userWindow.setContactWindowReference(contactWindow);
+userWindow.setChatWindowReference(chatWindow);
+contactWindow.setUserWindowReference(userWindow);
+contactWindow.setChatWindowReference(chatWindow);
+
+userWindow
+.addUserButton
+.addEventListener("click", function () {
+    contactWindow.add_contacts(Array.from(userWindow.selectedUsers));
+});
+
+contactWindow
+.removeContactButton
+.addEventListener("click", function() {
+    if (contactWindow.selectedContact) {
+        contactWindow.remove_contact(contactWindow
+                                      .selectedContact
+                                      .id
+                                      .split("-")[1]);
+    }
+});
+
+chatWindow
+.sendMessageButton
+.addEventListener("click", function(){
+    if (contactWindow.selectedContact) {
+        const recipient_id = contactWindow.selectedContact.id.split("-")[1];
+        const message_text = chatWindow.messageField.value;
+        chatWindow.send_message(recipient_id, message_text);
+    }
+    else {
+          console.log("Can't send the message: no contact selected");
+    }
+});
 
 
-//////////// driver
+contactWindow
+.contactList
+.addEventListener("click", function(event) {
+    if (event.target.tagName.toLowerCase() === "li") {
+        const elementId = event.target.id.split("-")[1];
+        contactWindow.choose_contact(elementId);
+    }
+    else if (event.target.tagName.toLowerCase() === "span") {
+        const parentElementId = event.target.parentElement.id.split("-")[1];
+        contactWindow.choose_contact(parentElementId);
+    }
+});
 
-    let chatWindow = new ChatWindow(CHAT_WINDOW_ID, 
-                                    MESSAGE_AREA_ID, MESSAGE_FIELD_ID,
-                                    SEND_MESSAGE_BUTTON_ID, CHAT_HEADER_ID);
-    let userWindow = new UserWindow(USER_WINDOW_ID,
-                                USER_LIST_ID,
-                                ADD_USER_BUTTON_ID);
-    let contactWindow = new ContactWindow(CONTACT_WINDOW_ID,
-                                      CONTACT_LIST_ID,
-                                      REMOVE_CONTACT_BUTTON_ID);
-
-    chatWindow.setContactWindowReference(contactWindow);
-    chatWindow.setUserWindowReference(userWindow);
-    userWindow.setContactWindowReference(contactWindow);
-    userWindow.setChatWindowReference(chatWindow);
-    contactWindow.setUserWindowReference(userWindow);
-    contactWindow.setChatWindowReference(chatWindow);
-    
-    userWindow
-    .addUserButton
-    .addEventListener("click", function () {
-        contactWindow.add_contacts(Array.from(userWindow.selectedUsers));
-    });
-
-    contactWindow
-    .removeContactButton
-    .addEventListener("click", function() {
-        if (contactWindow.selectedContact) {
-            contactWindow.remove_contact(contactWindow
-                                         .selectedContact
-                                         .id
-                                         .split("-")[1]);
-        }
-    });
-
-    chatWindow
-    .sendMessageButton
-    .addEventListener("click", function(){
-        if (contactWindow.selectedContact) {
-            const recipient_id = contactWindow.selectedContact.id.split("-")[1];
-            const message_text = chatWindow.messageField.value;
-            chatWindow.send_message(recipient_id, message_text);
+userWindow
+.userList
+.addEventListener("click", function(event) {
+    const item = event.target;
+    if (item.tagName.toLowerCase() === "li") {
+        const itemClass = item.getAttribute("class");
+        const itemId = item.id.split("-")[1];
+        if (itemClass.includes(SELECTED_ELEMENT)) {
+            userWindow.selectedUsers.delete(itemId);
+            item.setAttribute("class", 
+                                itemClass
+                                .replace(" " + SELECTED_ELEMENT, ""));
         }
         else {
-             console.log("Can't send the message: no contact selected");
+            userWindow.selectedUsers.add(itemId);
+            item.setAttribute("class", itemClass + " " + SELECTED_ELEMENT);
         }
-    });
+    }
+    else if (item.tagName.toLowerCase() === "span") {
+        const parent = item.parentElement;
+        const itemParentClass = parent.getAttribute("class");
+        const itemParentId = parent.id.split("-")[1];
+        if (itemParentClass.includes(SELECTED_ELEMENT)) {
+            userWindow.selectedUsers.delete(itemParentId);
+            parent.setAttribute("class", 
+                                itemParentClass
+                                .replace(" " + SELECTED_ELEMENT, ""));
+        }
+        else {
+            userWindow.selectedUsers.add(itemParentId);
+            parent.setAttribute("class", 
+                                itemParentClass + " " + SELECTED_ELEMENT);
+        }
+    }
+    userWindow.updateAddUserButton();
+});
 
+window
+.addEventListener("load", function() {
+    chatWindow.scrollDown();
 
     contactWindow
-    .contactList
-    .addEventListener("click", function(event) {
-        if (event.target.tagName.toLowerCase() === "li") {
-            const elementId = event.target.id.split("-")[1];
-            contactWindow.choose_contact(elementId);
-        }
-        else if (event.target.tagName.toLowerCase() === "span") {
-            const parentElementId = event.target.parentElement.id.split("-")[1];
-            contactWindow.choose_contact(parentElementId);
-        }
-    });
-
-    userWindow
-    .userList
-    .addEventListener("click", function(event) {
-        const item = event.target;
-        if (item.tagName.toLowerCase() === "li") {
-            const itemClass = item.getAttribute("class");
-            const itemId = item.id.split("-")[1];
-            if (itemClass.includes(SELECTED_ELEMENT)) {
-                userWindow.selectedUsers.delete(itemId);
-                item.setAttribute("class", 
-                                    itemClass
-                                    .replace(" " + SELECTED_ELEMENT, ""));
-            }
-            else {
-                userWindow.selectedUsers.add(itemId);
-                item.setAttribute("class", itemClass + " " + SELECTED_ELEMENT);
-            }
-        }
-        else if (item.tagName.toLowerCase() === "span") {
-            const parent = item.parentElement;
-            const itemParentClass = parent.getAttribute("class");
-            const itemParentId = parent.id.split("-")[1];
-            if (itemParentClass.includes(SELECTED_ELEMENT)) {
-                userWindow.selectedUsers.delete(itemParentId);
-                parent.setAttribute("class", 
-                                    itemParentClass
-                                    .replace(" " + SELECTED_ELEMENT, ""));
-            }
-            else {
-                userWindow.selectedUsers.add(itemParentId);
-                parent.setAttribute("class", 
-                                    itemParentClass + " " + SELECTED_ELEMENT);
-            }
-        }
-        userWindow.updateAddUserButton();
-    });
-
-    window
-    .addEventListener("load", function() {
-        chatWindow.scrollDown();
-
-        contactWindow
-        .selectedContact = document.querySelector("." + CURRENT_SELECTED);
-        
-        if (contactWindow.selectedContact) {
-          contactWindow.showRemoveContactButton();
-        }
-    });
+    .selectedContact = document.querySelector("." + CURRENT_SELECTED);
+    
+    if (contactWindow.selectedContact) {
+      contactWindow.showRemoveContactButton();
+      chatWindow.startMessagePolling();
+    }
+});

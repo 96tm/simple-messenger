@@ -1,4 +1,5 @@
 from flask import render_template, session, redirect, url_for
+from flask import jsonify, request, flash, abort, current_app
 from . import main
 from .. import database
 from ..models import User, Message
@@ -6,11 +7,29 @@ from flask_login import login_required, current_user
 from datetime import datetime, timezone
 from sqlalchemy import not_, or_, and_
 from .forms import MessageForm
-from flask import jsonify, request, flash, abort
+
+
+def flush_messages(message_query):
+    message_query.update({'was_read': True}, synchronize_session=False)
+    database.session.commit()
+
+
+def format_date(date):
+    date_format = '%A, %B %d %Y %H:%M'
+    return date.strftime(date_format)
 
 
 def get_messages(user, contact_id):
     contact = User.query.get_or_404(contact_id)
+
+    query_to_update = (database
+                      .session
+                      .query(Message)
+                      .filter(or_(and_(Message.sender == contact,
+                                       Message.recipient == user,
+                                       not_(Message.was_read))))
+    )
+
     messages = (database
                 .session
                 .query(Message)
@@ -19,17 +38,54 @@ def get_messages(user, contact_id):
                             and_(Message.sender == contact,
                                     Message.recipient == user)))
                 .order_by(Message.message_date)
-                .all())
-    date_format = '%A, %B %d %Y %H:%M'
-    messages = [{'text': message.text,
-                 'timestamp': message.message_date.strftime(date_format),
-                 'sender_username': message.sender.username} 
-                for message in messages]
-    return jsonify({'messages': messages,
+                .all()
+    )
+
+    flush_messages(query_to_update)
+
+    messages_json = [{'text': message.text,
+                      'timestamp': format_date(message.message_date),
+                      'sender_username': message.sender.username}
+                     for message in messages]
+    return jsonify({'messages': messages_json,
                     'contact_username': contact.username,
                     'current_username': current_user.username
                    })
 
+
+@main.route('/check_new_messages', methods=['POST'])
+@login_required
+def check_new_messages():
+    if request.is_json and request.json and request.json['contact_id']:
+        try:
+            user = current_user._get_current_object()
+            contact_id = int(request.json['contact_id'])
+            contact = User.query.get_or_404(contact_id)
+
+            query = (database
+                        .session
+                        .query(Message)
+                        .filter(and_(Message.sender == contact,
+                                     Message.recipient == user,
+                                     not_(Message.was_read)))
+            )
+
+            messages = query.order_by(Message.message_date).all()
+
+            messages_json = [{'text': message.text,
+                              'sender_username': contact.username,
+                              'timestamp': format_date(message.message_date)} 
+                        for message in messages]
+
+            flush_messages(query)
+
+            data = {'messages': messages_json,
+                    'current_username': current_user.username,
+                    'contact_username': contact.username}
+            return jsonify(data)
+        except ValueError:
+            print('Invalid contact')
+    abort(404)
 
 @main.route('/remove_contact', methods=['POST'])
 @login_required
@@ -121,9 +177,12 @@ def index():
             .order_by(User.username).all())
     messages = None
     current_contact_username = None
-    current_contact_id = session.get('current_contact_id')
+    current_contact_id = None
+    if session.get('current_contact_id') != current_user.id:
+        current_contact_id = session.get('current_contact_id')
     if current_contact_id:
-        messages = get_messages(current_user._get_current_object(), current_contact_id)
+        messages = get_messages(current_user._get_current_object(), 
+                                current_contact_id)
         current_contact_username = User.query.get(current_contact_id).username
     return render_template('index.html',
                            contacts = contacts,

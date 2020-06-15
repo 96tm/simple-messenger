@@ -76,20 +76,20 @@
             {% if current_user %}
               <div id="message-area-id" class="message-area">
                 {% if messages %}
-                  {% for message in messages.json['messages']%}
+                  {% for message in messages.json["messages"]%}
                   <div class="message">
                     <span> 
                       <b>
-                        {% if message['sender_username'] == current_user.username %}
+                        {% if message["sender_username"] == current_user.username %}
                           You
                         {% else %} 
-                          {{message['sender_username']}} 
+                          {{message["sender_username"]}} 
                         {% endif %}
                       </b> 
-                      <span>{{ message['timestamp']}}</span>
+                      <span>{{ message["timestamp"]}}</span>
                     </span>
                     <br>
-                    <span>{{message['text']}}</span>
+                    <span>{{message["text"]}}</span>
                   </div>
                   <br>
                   {% endfor %}
