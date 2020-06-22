@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 import time
 
 from app import create_app, database
-from app.models import User, Role, Permission, Contact, Message
+from app.models import User, Role, Permission, Contact, Message, Chat
 from app.main.views import check_new_messages
 from app.auth.forms import LoginForm
 from flask import current_app, json, jsonify
@@ -17,6 +17,9 @@ class ClientTestCase(unittest.TestCase):
         database.create_all()
         Role.insert_roles()
         self.client = self.app.test_client(use_cookies=True)
+    
+    def test_index(self):
+        pass
 
     def test_register_and_login(self):
         response = self.client.post('/auth/signup', data={
@@ -28,7 +31,6 @@ class ClientTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 302)
 
         user = User.query.filter_by(username='user').first()
-        print('USER', user)
 
         response = self.client.post('/auth/login', data={
             'email': 'user@user.user',
@@ -62,20 +64,23 @@ class ClientTestCase(unittest.TestCase):
         arthur = User(username='arthur', password='arthur', email='arthur@arthur.arthur', confirmed=True)
         database.session.add_all([bob, arthur])
         database.session.commit()
-        message1 = Message(text='hi there1', sender=arthur, recipient=bob, was_read=True)
-        message2 = Message(text='hi there2', sender=arthur, recipient=bob, was_read=True)
-        message3 = Message(text='hi there3', sender=arthur, recipient=bob)
-        message4 = Message(text='hi there4', sender=arthur, recipient=bob)
+        chat = Chat()
+        chat.add_users([bob, arthur])
+        message1 = Message(text='hi there1', sender=arthur, recipient=bob, was_read=True, chat=chat)
+        message2 = Message(text='hi there2', sender=arthur, recipient=bob, was_read=True, chat=chat)
+        message3 = Message(text='hi there3', sender=arthur, recipient=bob, chat=chat)
+        message4 = Message(text='hi there4', sender=arthur, recipient=bob, chat=chat)
         database.session.add_all([message1, message2, message3, message4])
         database.session.commit()
         data = {'email': bob.email, 'remember_me': True, 'password': 'bob'}
         self.client.post('/auth/login', data=data)
-        
+        self.assertFalse(message3.was_read)
+        self.assertFalse(message4.was_read)
         response = self.client.post('/check_new_messages',
                                     content_type='application/json',
                                     headers=[('X-Requested-With',
                                               'XMLHttpRequest')],
-                                    json={'contact_id': arthur.id},
+                                    json={'chat_id': chat.id},
                                     follow_redirects=True)
         self.assertTrue(message3.was_read)
         self.assertTrue(message4.was_read)

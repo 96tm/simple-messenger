@@ -5,9 +5,9 @@ class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY', 'change_debug_secret_key!')
     SQLALCHEMY_COMMIT_ON_TEARDOWN = True
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    MAIL_SUBJECT_PREFIX = '[SimpleChat]'
+    MAIL_SUBJECT_PREFIX = '[SimpleMessenger]'
     MAIL_SENDER = os.environ.get('MAIL_SENDER', 'Admin <use@some.mail')
-    ADMIN = os.environ.get('SECRET_CHAT_ADMIN', 'Admin')
+    ADMIN = os.environ.get('SIMPLE_MESSENGER_ADMIN', 'Admin')
     ADMIN_MAIL = 'admin@admin.admin'
 
     @staticmethod
@@ -27,7 +27,7 @@ class DevelopmentConfig(Config):
                                          + os.environ['FLASK_DB_PASS']
                                          + '@'
                                          + os.environ['FLASK_DB_HOSTNAME'] + '/'
-                                         + 'simple_chat_db')
+                                         + 'simple_messenger_db')
 
 class TestingConfig(Config):
     TESTING = True

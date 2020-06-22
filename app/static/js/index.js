@@ -6,8 +6,8 @@
 const POLLING_TIMEOUT = 3000;
 
 const USER_PREFIX = "user-";
-const CONTACT_PREFIX = "contact-";
-const CURRENT_SELECTED = "selected-current-contact";
+const CHAT_PREFIX = "chat-";
+const CURRENT_SELECTED = "selected-current-chat";
 const SELECTED_ELEMENT = "selected-element";
 const CHECK_MESSAGE_INTERVAL = 3000;
 const VISIBLE = "visible";
@@ -16,13 +16,13 @@ const COLLAPSED = "collapse";
 
 const USER_WINDOW_ID = "user-window-id";
 const USER_LIST_ID = "user-list-id";
-const ADD_USER_BUTTON_ID = "add-selected-contacts-id";
-
-const CONTACT_WINDOW_ID = "contact-window-id";
-const CONTACT_LIST_ID = "contact-list-id";
-const REMOVE_CONTACT_BUTTON_ID = "remove-selected-contact-id";
+const ADD_CONTACT_BUTTON_ID = "add-contacts-id";
 
 const CHAT_WINDOW_ID = "chat-window-id";
+const CHAT_LIST_ID = "chat-list-id";
+const REMOVE_CHAT_BUTTON_ID = "remove-selected-chat-id";
+
+const MESSAGE_WINDOW_ID = "message-window-id";
 const CHAT_HEADER_ID = "chat-header-id";
 const MESSAGE_AREA_ID = "message-area-id";
 const MESSAGE_FIELD_ID ="message-field-id";
@@ -30,6 +30,22 @@ const MESSAGE_CLASS = "message";
 const SEND_MESSAGE_BUTTON_ID = "send-message-button-id";
 
 const JSON_CONTENT_TYPE = "application/json";
+
+
+function createAlert(text) {
+  let container = document.getElementById("flashed-messages");
+  let messageDiv = document.createElement("div");
+  messageDiv.className = "alert alert-warning";
+  let closeButton = document.createElement("button");
+  closeButton.className = "close";
+  closeButton.setAttribute("data-dismiss", "alert");
+  closeButton.innerText = "×";
+  messageDiv.appendChild(closeButton);
+  let textElement = document.createElement("span");
+  textElement.innerText = text;
+  messageDiv.appendChild(textElement);
+  container.appendChild(messageDiv);
+}
 
 
 function logFailedAjaxRequest(request) {
@@ -40,9 +56,9 @@ function logFailedAjaxRequest(request) {
 }
 
 function logException(exception) {
-  alert("Caught Exception: " + e.description);
-  console.log("Caught Exception: " + e.description);
-  console.log("Exception: " + e);
+  alert("Caught Exception: " + exception.description);
+  console.log("Caught Exception: " + exception.description);
+  console.log("Exception: " + exception);
 }
 
 
@@ -50,7 +66,7 @@ function logException(exception) {
 
 
 class UserWindow {
-  constructor(userWindowId, userListId, addUserButtonId) {
+  constructor(userWindowId, userListId, addContactButtonId) {
     this.USER_PREFIX = "user-";
     this.LIST_ITEM_CLASS = this.USER_PREFIX + "item";
     this.FORMAT_SPAN_CLASS = "fa-li";
@@ -59,9 +75,9 @@ class UserWindow {
     this.userWindow = document.getElementById(userWindowId);
     this.userList = document.getElementById(userListId);
     this.selectedUsers = new Set();
-    this.addUserButton = document.getElementById(addUserButtonId);
+    this.addContactButton = document.getElementById(addContactButtonId);
+    this.messageWindowReference = null;
     this.chatWindowReference = null;
-    this.contactWindowReference = null;
     this.setUsers();
   }
 
@@ -71,12 +87,12 @@ class UserWindow {
     }
   }
 
-  setChatWindowReference(chatWindowReference) {
-    this.chatWindowReference = chatWindowReference;
+  setMessageWindowReference(messageWindowReference) {
+    this.messageWindowReference = messageWindowReference;
   }
 
-  setContactWindowReference(contactWindowReference) {
-    this.contactWindowReference = contactWindowReference;
+  setChatWindowReference(chatWindowReference) {
+    this.chatWindowReference = chatWindowReference;
   }
 
   setClass(className) {
@@ -87,17 +103,18 @@ class UserWindow {
     return this.userWindow.getAttribute("class");
   }
 
-  updateAddUserButton() {
+  updateAddContactButton() {
+    console.log('hey' + this.selectedUsers.size);
     if (this.selectedUsers.size) {
-      this.addUserButton.style.visibility = VISIBLE;
+      this.addContactButton.style.display = "block";
     }
     else {
-      this.addUserButton.style.visibility = HIDDEN;
+      this.addContactButton.style.display = "none";
     }
   };
   
   removeUser(userId) {
-    if (this.users.has(userId)) { // INT OR STRING?
+    if (this.users.has(userId)) {
         const listItem = document.getElementById(this.USER_PREFIX + userId);
         this.userList.removeChild(listItem);
         this.users.delete(userId);
@@ -126,36 +143,36 @@ class UserWindow {
   };
 }
 
-class ContactWindow {
-  constructor(contactWindowId, 
-              contactListId,
-              removeContactButtonId) {
-    this.CONTACT_PREFIX = "contact-";
-    this.LIST_ITEM_CLASS = this.CONTACT_PREFIX + "item";
+class ChatWindow {
+  constructor(chatWindowId, 
+              chatListId,
+              removeChatButtonId) {
+    this.CHAT_PREFIX = "chat-";
+    this.LIST_ITEM_CLASS = this.CHAT_PREFIX + "item";
     this.FORMAT_SPAN_CLASS = "fa-li";
     this.FORMAT_I_CLASS = "fas fa-times";
-    this.contacts = new Set();
-    this.contactWindow = document.getElementById(contactWindowId);
-    this.contactList = document.getElementById(contactListId);
-    this.removeContactButton = document.getElementById(removeContactButtonId);
-    this.selectedContact = null;
-    this.chatWindowReference = null;
+    this.chats = new Set();
+    this.chatWindow = document.getElementById(chatWindowId);
+    this.chatList = document.getElementById(chatListId);
+    this.removeChatButton = document.getElementById(removeChatButtonId);
+    this.selectedChat = null;
+    this.messageWindowReference = null;
     this.userWindowReference = null;
 
-    this.setContacts();
+    this.setChats();
   }
 
-  setContacts() {
-    for (let index = 0; index < this.contactList.children.length; index++) {
-      this.contacts.add(this.contactList.children[index].id.split("-")[1]);
+  setChats() {
+    for (let index = 0; index < this.chatList.children.length; index++) {
+      this.chats.add(this.chatList.children[index].id.split("-")[1]);
     }
   };
 
-  chooseContact(currentUsername, contactUsername, contactId, messages) {
-    let lastSelected = this.selectedContact;
-    this.selectedContact = document
-                            .getElementById(CONTACT_PREFIX
-                                            + contactId);
+  chooseChat(currentUsername, chatName, chatId, messages) {
+    let lastSelected = this.selectedChat;
+    this.selectedChat = document
+                            .getElementById(CHAT_PREFIX
+                                            + chatId);
     if (lastSelected) {
           lastSelected
           .setAttribute("class", 
@@ -165,29 +182,30 @@ class ContactWindow {
     }
     
     if (!lastSelected
-        || !(lastSelected.id.split("-")[1] === contactId)) {
+        || !(lastSelected.id.split("-")[1] === chatId)) {
               this
-              .selectedContact
+              .selectedChat
               .setAttribute("class", 
-                            (this.selectedContact
+                            (this.selectedChat
                             .getAttribute("class") 
                               + " "
                               + CURRENT_SELECTED));
-              this.chatWindowReference.addMessages(currentUsername, contactUsername, messages);
-              this.chatWindowReference.setChatHeader(contactUsername);
-              this.chatWindowReference.show();
 
-              this.showRemoveContactButton();
+              this.messageWindowReference.addMessages(currentUsername, chatName, messages);
+              this.messageWindowReference.setChatHeader(chatName);
+              this.messageWindowReference.show();
+
+              this.showRemoveChatButton();
     } else {
-        this.hideRemoveContactButton();
-        this.chatWindowReference.hide();
-        this.selectedContact = null;
+        this.hideRemoveChatButton();
+        this.messageWindowReference.hide();
+        this.selectedChat = null;
     }   
   };
 
-  choose_contact(contactId) {
+  chooseChatAjax(chatId) {
     let request = new XMLHttpRequest();
-    request.open("POST", "/choose_contact", true);
+    request.open("POST", "/choose_chat", true);
     request.setRequestHeader("Content-Type", JSON_CONTENT_TYPE);
 
     let thisReference = this;
@@ -198,9 +216,11 @@ class ContactWindow {
               if (request.status === 200) {
                 const response = JSON.parse(request.response);
                 const messages = response["messages"];
-                const contactUsername = response["contact_username"];
+                const chatName = response["chat_name"];
                 const currentUsername = response["current_username"];
-                thisReference.chooseContact(currentUsername, contactUsername, contactId, messages);
+
+                thisReference.chooseChat(currentUsername, chatName, 
+                                         chatId, messages);
               } else {
                 logFailedAjaxRequest(request);
               }
@@ -210,45 +230,59 @@ class ContactWindow {
             logException(e);
           }
     }).bind(this);
-    request.send(JSON.stringify({"contact_id": contactId}));
+    request.send(JSON.stringify({"chat_id": chatId}));
   };
+///////////
 
-  addContact(username, contactId) {
-    if (!this.contacts.has(contactId)) { // INT OR STRING?
-        let listItem = document.createElement("li");
-        let formatSpan = document.createElement("span");
-        let usernameSpan = document.createElement("span");
-        let formatI = document.createElement("i");
-        listItem.setAttribute("class", this.LIST_ITEM_CLASS);
-        listItem.id = this.CONTACT_PREFIX + contactId;
-        formatSpan.setAttribute("class", this.FORMAT_SPAN_CLASS);
-        formatI.setAttribute("class", this.FORMAT_I_CLASS);
-        usernameSpan.innerText = " " + username;
-        formatSpan.appendChild(formatI);
-        listItem.appendChild(formatSpan);
-        this.contacts.add(contactId); // INT OF STRING?
-        
-        listItem.appendChild(usernameSpan);
-        this.contactList.appendChild(listItem);
+  addChat(chatName, chatId) {
+    if (!this.chats.has(chatId)) {
+      let listItem = document.createElement("li");
+      let formatSpan = document.createElement("span");
+      let chatNameSpan = document.createElement("span");
+      let formatI = document.createElement("i");
+      listItem.id = this.CHAT_PREFIX + chatId;
+      listItem.className = this.LIST_ITEM_CLASS;
+      formatSpan.setAttribute("class", this.FORMAT_SPAN_CLASS);
+      formatI.setAttribute("class", this.FORMAT_I_CLASS);
+      chatNameSpan.innerText = " " + chatName;
+      formatSpan.appendChild(formatI);
+      listItem.appendChild(formatSpan);
+      this.chats = new Set();
+      this.chats.add(chatId);
 
-        this.userWindowReference.removeUser(contactId);
+      // if (this
+      //     .chatWindow
+      //     .selectedChat && this
+      //                     .chatWindow
+      //                     .selectedChat.id.split("-")[1] === chatId) {
+      //   listItem.setAttribute("class", 
+      //                         this.LIST_ITEM_CLASS + " " + SELECTED_ELEMENT);
+      //   this.chatWindow.selectedChat = listItem;
+      // }
+      // else {
+      //   listItem.setAttribute("class",
+      //                         this.LIST_ITEM_CLASS);
+      // }
+      listItem.appendChild(chatNameSpan);
+      // this.chatList.innerText = "";  
+      this.chatList.appendChild(listItem);
     }
   };
 
-  addContacts(addedContacts) {
-    for (let index = 0; index < addedContacts.length; index++) {
-      const contact = addedContacts[index];
-      const username = contact["username"];
-      const contactId = contact["contact_id"];
-      this.addContact(username, contactId);
+  addChats(addedChats) {
+    for (let index = 0; index < addedChats.length; index++) {
+      const chat = addedChats[index];
+      const chatName = chat["chat_name"];
+      const chatId = chat["chat_id"];
+      this.addChat(chatName, chatId);
     }
-    this.userWindowReference.updateAddUserButton();
+    this.userWindowReference.updateAddContactButton();
   };
 
-  add_contacts(contactIds) {
+  addContactsAndChatsAjax(userIds) {
     if (this.userWindowReference.selectedUsers.size) {
       let request = new XMLHttpRequest();
-      request.open("POST", "/add_contacts", true);
+      request.open("POST", "/add_contacts_and_chats", true);
       request.setRequestHeader("Content-Type", JSON_CONTENT_TYPE);
 
       let thisReference = this;
@@ -258,8 +292,8 @@ class ContactWindow {
           if (request.readyState === request.DONE) {
             if (request.status === 200) {
               const response = JSON.parse(request.response);
-              const addedContacts = response["added_contacts"];
-              thisReference.addContacts(addedContacts);
+              const addedChats = response["added_chats"];
+              thisReference.addChats(addedChats);
             } else {
               logFailedAjaxRequest(request);
             }
@@ -269,52 +303,50 @@ class ContactWindow {
           logException(e);
         }
       }
-      request.send(JSON.stringify({contact_ids: contactIds}))
+      request.send(JSON.stringify({user_ids: userIds}))
     }
   };
 
   setClass(className) {
-    this.contactWindow.setAttribute("class", className);
+    this.chatWindow.setAttribute("class", className);
   };
 
   getClass() {
-    return this.contactWindow.getAttribute("class");
+    return this.chatWindow.getAttribute("class");
   };
 
-  setChatWindowReference(chatWindowReference) {
-    this.chatWindowReference = chatWindowReference;
+  setMessageWindowReference(messageWindowReference) {
+    this.messageWindowReference = messageWindowReference;
   };
 
   setUserWindowReference(userWindowReference) {
     this.userWindowReference = userWindowReference;
   };
 
-  showRemoveContactButton() {
-    this.removeContactButton.style.visibility = VISIBLE;
+  showRemoveChatButton() {
+    this.removeChatButton.style.display = "block";
   };
 
-  hideRemoveContactButton() {
-    this.removeContactButton.style.visibility = HIDDEN;
+  hideRemoveChatButton() {
+    this.removeChatButton.style.display = "none";
   };
 
-  removeContact(username, contactId) {
-    if (this.contacts.has(contactId)) {
-
-        const listItem = document.getElementById(this.CONTACT_PREFIX + contactId);
-        
-        this.contactList.removeChild(listItem);
-        this.contacts.delete(contactId); // INT OR STRING?
-        this.selectedContact = null;
-        this.hideRemoveContactButton();
-
-        this.userWindowReference.addUser(username, contactId);
-        this.chatWindowReference.hide();
+  removeChat(chatId) {
+    console.log('hey' + this.chats)
+    if (this.chats.has(chatId)) {
+      
+        const listItem = document.getElementById(this.CHAT_PREFIX + chatId);
+        this.chatList.removeChild(listItem);
+        this.chats.delete(chatId);
+        this.selectedChat = null;
+        this.hideRemoveChatButton();
+        this.messageWindowReference.hide();
     }
   };
 
-  remove_contact(contactId) {
+  removeChatAjax(chatId) {
     let request = new XMLHttpRequest();
-    request.open("POST", "/remove_contact", true);
+    request.open("POST", "/remove_chat", true);
     request.setRequestHeader("Content-Type", JSON_CONTENT_TYPE);
 
     let thisReference = this;
@@ -324,11 +356,9 @@ class ContactWindow {
         if (request.readyState === request.DONE) {
           if (request.status === 200) {
             const response = JSON.parse(request.response);
-            const contact = response["removed_contact"];
-            const contactId = contact["contact_id"];
-            const username = contact["username"];
-  
-            thisReference.removeContact(username, contactId);
+            const chat = response["removed_chat"];
+            const chatId = chat["chat_id"];
+            thisReference.removeChat(chatId);
           }
           else {
             logFailedAjaxRequest(request);
@@ -339,23 +369,23 @@ class ContactWindow {
         logException(e);
       }
     }
-    request.send(JSON.stringify({contact_id: contactId}))
+    request.send(JSON.stringify({chat_id: chatId}))
   };
 }
 
-class ChatWindow {
-  constructor(chatWindowId, messageAreaId,
+class MessageWindow {
+  constructor(messageWindowId, messageAreaId,
               messageFieldId, sendMessageButtonId, chatHeaderId) {
     this.COLUMN_3 = "col-lg-3";
     this.CENTER_FROM_LEFT = "center-from-left";
     this.CENTER_FROM_RIGHT = "center-from-right";
     this.CHAT_HEADER_PREFIX = "Chat with ";
-    this.chatWindow = document.getElementById(chatWindowId);
+    this.messageWindow = document.getElementById(messageWindowId);
     this.chatHeader = document.getElementById(chatHeaderId);
     this.messageArea =  document.getElementById(messageAreaId);
     this.messageField = document.getElementById(messageFieldId);
     this.sendMessageButton = document.getElementById(sendMessageButtonId);
-    this.contactWindowReference = null;
+    this.chatWindowReference = null;
     this.userWindowReference = null;
     this.setIntervalHandle = null;
   }
@@ -368,8 +398,8 @@ class ChatWindow {
                                           .bind(thisReference),
                                           POLLING_TIMEOUT,
                                           this
-                                          .contactWindowReference
-                                          .selectedContact
+                                          .chatWindowReference
+                                          .selectedChat
                                           .id
                                           .split("-")[1]
     );
@@ -384,28 +414,28 @@ class ChatWindow {
     this.chatHeader.innerText = this.CHAT_HEADER_PREFIX + header;
   };
 
-  addMessage(currentUsername, contactUsername, message) {
+  addMessage(currentUsername, chatName, message) {
     const text = message["text"];
 
-    const timestamp = message["timestamp"];
+    const dateCreated = message["date_created"];
     let username;
     if (message["sender_username"] === currentUsername) {
         username = "You";
     }
     else {
-        username = contactUsername;
+        username = chatName;
     }
     let messageDiv = document.createElement("div");
     let messageSpan = document.createElement("span");
-    let timestampSpan = document.createElement("span");
+    let dateCreatedSpan = document.createElement("span");
     let textSpan = document.createElement("span");
     const b = document.createElement("b");
     const br = document.createElement("br");
     b.innerText = username + " ";
     textSpan.innerText = text;
-    timestampSpan.innerText = timestamp + "\n";
+    dateCreatedSpan.innerText = dateCreated + "\n";
     messageSpan.appendChild(b);
-    messageSpan.appendChild(timestampSpan);
+    messageSpan.appendChild(dateCreatedSpan);
     messageSpan.appendChild(br);
   
     messageDiv.appendChild(messageSpan);
@@ -418,19 +448,19 @@ class ChatWindow {
     this.scrollDown();
   };
 
-  addMessages(currentUsername, contactUsername, messages, clearArea = true) {
+  addMessages(currentUsername, chatName, messages, clearArea = true) {
     if (clearArea) {
       this.messageArea.innerHTML = "";
     }
     
     for (let index = 0; index < messages.length; index++) {
         const message = messages[index];
-        this.addMessage(currentUsername, contactUsername, message);
+        this.addMessage(currentUsername, chatName, message);
     }
   };
 
-
-  checkNewMessagesAjax(currentContactId) {
+  // change contact to chat
+  checkNewMessagesAjax(currentChatId) {
     let request = new XMLHttpRequest();
     request.open("POST", "/check_new_messages", true);
     request.setRequestHeader("Content-Type", JSON_CONTENT_TYPE);
@@ -443,11 +473,11 @@ class ChatWindow {
             if (request.status === 200) {
               const response = JSON.parse(request.response);
               const messages = response["messages"];
-              const contactUsername = response["contact_username"];
+              const chatName = response["chat_name"];
               const currentUsername = response["current_username"];
               thisReference.addMessages(currentUsername,
-                                         contactUsername,
-                                         messages, false);
+                                        chatName,
+                                        messages, false);
             } else {
               logFailedAjaxRequest(request);
             }
@@ -458,14 +488,14 @@ class ChatWindow {
         }
     }
     const data = {
-                   contact_id: currentContactId
+                   chat_id: currentChatId
                  };
     request.send(JSON.stringify(data));
   };
 
 
-  send_message(recipient_id, message_text){
-    const text = message_text.trim();
+  sendMessageAjax(chatId, messageText){
+    const text = messageText.trim();
     if (text) {
         let request = new XMLHttpRequest();
         request.open("POST", "/send_message", true);
@@ -479,13 +509,13 @@ class ChatWindow {
                   if (request.status === 200) {
                     const response = JSON.parse(request.response);
                     const message = response["message"];
-                    const contactUsername = response["contact_username"];
+                    const chatName = response["chat_name"];
                     const currentUsername = response["current_username"];
 
                     thisReference.messageField.value = "";
                     
                     thisReference.addMessage(currentUsername,
-                                     contactUsername, message);
+                                             chatName, message);
                   } else {
                     logFailedAjaxRequest(request);
                   }
@@ -496,15 +526,15 @@ class ChatWindow {
               }
         }
         let data = {
-                        message: text,
-                        recipient_id: recipient_id
+                      message: text,
+                      chat_id: chatId
                    };
         request.send(JSON.stringify(data));
     }
   };
 
-  setContactWindowReference(contactWindowReference) {
-    this.contactWindowReference = contactWindowReference;
+  setChatWindowReference(chatWindowReference) {
+    this.chatWindowReference = chatWindowReference;
   };
 
   setUserWindowReference(userWindowReference) {
@@ -512,20 +542,20 @@ class ChatWindow {
   };
   
   getClass() {
-    this.chatWindow.getAttribute("class");
+    this.messageWindow.getAttribute("class");
   };
 
   setClass(className) {
-    this.chatWindow.setAttribute("class", className);
+    this.messageWindow.setAttribute("class", className);
   };
 
   addClass(className) {
-    this.chatWindow.setAttribute("class",
+    this.messageWindow.setAttribute("class",
                            this.getClass() + " " + className);
   };
 
   removeClass(className) {
-    this.chatWindow.setAttribute("class", 
+    this.messageWindow.setAttribute("class", 
                                  this.getClass()
                                      .replace(" " + className, ""));
   };
@@ -536,17 +566,17 @@ class ChatWindow {
 
   show() {
     this.startMessagePolling();
-    this.chatWindow.style.display = "block";
+    this.messageWindow.style.display = "block";
     this.userWindowReference.setClass(this.COLUMN_3);
-    this.contactWindowReference.setClass(this.COLUMN_3);
+    this.chatWindowReference.setClass(this.COLUMN_3);
   };
 
   hide() {
     this.stopMessagePolling();
-    this.chatWindow.style.display = "none";
+    this.messageWindow.style.display = "none";
     this.userWindowReference.setClass(this.COLUMN_3
                                       + " " + this.CENTER_FROM_LEFT);
-    this.contactWindowReference.setClass(this.COLUMN_3 
+    this.chatWindowReference.setClass(this.COLUMN_3 
                                          + " " + this.CENTER_FROM_RIGHT);
   };
 }
@@ -555,47 +585,47 @@ class ChatWindow {
 driver
 -----------------*/
 
-let chatWindow = new ChatWindow(CHAT_WINDOW_ID, 
-                                MESSAGE_AREA_ID, MESSAGE_FIELD_ID,
-                                SEND_MESSAGE_BUTTON_ID, CHAT_HEADER_ID);
+let messageWindow = new MessageWindow(MESSAGE_WINDOW_ID, 
+                                      MESSAGE_AREA_ID, MESSAGE_FIELD_ID,
+                                      SEND_MESSAGE_BUTTON_ID, CHAT_HEADER_ID);
 let userWindow = new UserWindow(USER_WINDOW_ID,
-                            USER_LIST_ID,
-                            ADD_USER_BUTTON_ID);
-let contactWindow = new ContactWindow(CONTACT_WINDOW_ID,
-                                  CONTACT_LIST_ID,
-                                  REMOVE_CONTACT_BUTTON_ID);
+                                USER_LIST_ID,
+                                ADD_CONTACT_BUTTON_ID);
+let chatWindow = new ChatWindow(CHAT_WINDOW_ID,
+                                CHAT_LIST_ID,
+                                REMOVE_CHAT_BUTTON_ID);
 
-chatWindow.setContactWindowReference(contactWindow);
-chatWindow.setUserWindowReference(userWindow);
-userWindow.setContactWindowReference(contactWindow);
+messageWindow.setChatWindowReference(chatWindow);
+messageWindow.setUserWindowReference(userWindow);
 userWindow.setChatWindowReference(chatWindow);
-contactWindow.setUserWindowReference(userWindow);
-contactWindow.setChatWindowReference(chatWindow);
+userWindow.setMessageWindowReference(messageWindow);
+chatWindow.setUserWindowReference(userWindow);
+chatWindow.setMessageWindowReference(messageWindow);
 
 userWindow
-.addUserButton
+.addContactButton
 .addEventListener("click", function () {
-    contactWindow.add_contacts(Array.from(userWindow.selectedUsers));
-});
-
-contactWindow
-.removeContactButton
-.addEventListener("click", function() {
-    if (contactWindow.selectedContact) {
-        contactWindow.remove_contact(contactWindow
-                                      .selectedContact
-                                      .id
-                                      .split("-")[1]);
-    }
+    chatWindow.addContactsAndChatsAjax(Array.from(userWindow.selectedUsers));
 });
 
 chatWindow
+.removeChatButton
+.addEventListener("click", function() {
+    if (chatWindow.selectedChat) {
+        chatWindow.removeChatAjax(chatWindow
+                                  .selectedChat
+                                  .id
+                                  .split("-")[1]);
+    }
+});
+
+messageWindow
 .sendMessageButton
 .addEventListener("click", function(){
-    if (contactWindow.selectedContact) {
-        const recipient_id = contactWindow.selectedContact.id.split("-")[1];
-        const message_text = chatWindow.messageField.value;
-        chatWindow.send_message(recipient_id, message_text);
+    if (chatWindow.selectedChat) {
+        const chatId = chatWindow.selectedChat.id.split("-")[1];
+        const messageText = messageWindow.messageField.value;
+        messageWindow.sendMessageAjax(chatId, messageText);
     }
     else {
           console.log("Can't send the message: no contact selected");
@@ -603,17 +633,18 @@ chatWindow
 });
 
 
-contactWindow
-.contactList
+chatWindow
+.chatList
 .addEventListener("click", function(event) {
     if (event.target.tagName.toLowerCase() === "li") {
         const elementId = event.target.id.split("-")[1];
-        contactWindow.choose_contact(elementId);
+        chatWindow.chooseChatAjax(elementId);
     }
     else if (event.target.tagName.toLowerCase() === "span") {
-        const parentElementId = event.target.parentElement.id.split("-")[1];
-        contactWindow.choose_contact(parentElementId);
+        const elementId = event.target.parentElement.id.split("-")[1];
+        chatWindow.chooseChatAjax(elementId);
     }
+    
 });
 
 userWindow
@@ -650,18 +681,18 @@ userWindow
                                 itemParentClass + " " + SELECTED_ELEMENT);
         }
     }
-    userWindow.updateAddUserButton();
+    userWindow.updateAddContactButton();
 });
 
 window
 .addEventListener("load", function() {
-    chatWindow.scrollDown();
+    messageWindow.scrollDown();
 
-    contactWindow
-    .selectedContact = document.querySelector("." + CURRENT_SELECTED);
+    chatWindow
+    .selectedChat = document.querySelector("." + CURRENT_SELECTED);
     
-    if (contactWindow.selectedContact) {
-      contactWindow.showRemoveContactButton();
-      chatWindow.startMessagePolling();
+    if (chatWindow.selectedChat) {
+      chatWindow.showRemoveChatButton();
+      messageWindow.startMessagePolling();
     }
 });

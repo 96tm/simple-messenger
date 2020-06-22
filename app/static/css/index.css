@@ -11,7 +11,7 @@
   }
 
 
-  li.selected-current-contact{
+  li.selected-current-chat{
     font-weight: bold;
   }
 
@@ -19,12 +19,6 @@
     display: none;
   }
 
-
-  #add-selected-contacts-id,
-  #remove-selected-contact-id{
-    visibility: hidden;
-  }
-  
   .message{
     border: 1px solid #ced4da;
     border-radius: .25rem;
@@ -62,19 +56,19 @@
   }
 
   #user-list-id,
-  #contact-list-id {
+  #chat-list-id {
     padding-left: 0;
     overflow-y: scroll;
     height: 12em;
   }
 
-  li.contact-item,
+  li.chat-item,
   li.user-item{
     cursor: pointer;
     list-style: none;
   }
 
-  li.contact-item:before{
+  li.chat-item:before{
       content: '';
       display: inline-block;
       height: .7em;
@@ -84,7 +78,7 @@
       background-repeat:no-repeat;
   }
 
-  li.contact-item:hover,
+  li.chat-item:hover,
   li.user-item:hover{
     font-weight: bold;
   }

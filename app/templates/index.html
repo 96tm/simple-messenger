@@ -13,11 +13,11 @@
 {% if current_user.is_authenticated %}
 <div class="container">
     <div class="row">
-      <!-- Contacts search-->
-      <div id="user-window-id" class="col-lg-3 {% if not current_contact_id %}center-from-left{% endif %}">
+      <!-- User search-->
+      <div id="user-window-id" class="col-lg-3 {% if not current_chat_id %}center-from-left{% endif %}">
         <div class="card mb-5 mb-lg-0">
           <div class="card-body">
-            <h5 class="card-title text-muted text-uppercase text-center">Find contacts</h5>
+            <h5 class="card-title text-muted text-uppercase text-center">Find users</h5>
             <input class="form-control" type="search" placeholder="search...">
             <hr>
             <div class="user-list">
@@ -30,53 +30,69 @@
                     </li>
                     {% endfor %}
                   {% else %}
-                  <li class="text-muted"><span class="fa-li"><i class="fas"></i></span>no contacts</li>
+                  <li class="text-muted"><span class="fa-li"><i class="fas"></i></span>no users found</li>
                   {% endif %}
                 </ul>
             </div>
-            <button id="add-selected-contacts-id" class="btn btn-block btn-primary text-uppercase">Add</button>
+            <button id="add-contacts-id" class="btn btn-block btn-primary text-uppercase hidden-element">Add contacts</button>
           </div>
         </div>
       </div>
-      <!-- Contacts -->
-      <div id="contact-window-id" class="col-lg-3 {% if not current_contact_id %}center-from-right{% endif %}">
+      <!-- Chats -->
+      <div id="chat-window-id" class="col-lg-3 {% if not current_chat_id %}center-from-right{% endif %}">
         <div class="card mb-5 mb-lg-0">
           <div class="card-body">
-            <h5 class="card-title text-muted text-uppercase text-center">Your contacts</h5>
+            <h5 class="card-title text-muted text-uppercase text-center">Your chats</h5>
             <input class="form-control" type="search" placeholder="search...">
             <hr>
-            <div class="contact-list">
-              <ul id="contact-list-id" class="fa-ul">
+            <div class="chat-list">
+              <ul id="chat-list-id" class="fa-ul">
                 {% if current_user %}
-                  {% for contact in contacts %}
-                  <li id="contact-{{ contact.id}}" 
-                      class="contact-item {% if current_contact_id == contact.id %} selected-current-contact {% endif %}">
+                  {% for chat in chats %}
+                  <li id="chat-{{ chat.chat_id}}" 
+                      class="chat-item {% if current_chat_id == chat.chat_id %} selected-current-chat {% endif %}">
                     <span class="fa-li"><i class="fas fa-times"></i></span>
-                    <span>{{ contact.username }} </span>
+                    <span> {{chat.name}} </span>
                   </li>
                   {% endfor %}
                 {% else %}
-                <li class="text-muted"><span class="fa-li"><i class="fas fa-times"></i></span>no contacts</li>
+                <li class="text-muted">
+                  <span class="fa-li"><i class="fas fa-times"></i></span>
+                  no chats
+                </li>
                 {% endif %}
               </ul>
             </div>
-            <button id="remove-selected-contact-id" class="btn btn-block btn-primary text-uppercase">Remove</button>
+            <button id="remove-selected-chat-id"
+                    class="btn btn-block btn-primary 
+                           text-uppercase 
+                           {% if not current_chat_id %} 
+                           hidden-element 
+                           {% endif %}">Remove</button>
           </div>
         </div>
       </div>
       <!-- Chat -->
-      <div id="chat-window-id" class="col-lg-6 {% if not current_contact_id %} hidden-element {% endif %}">
+      <div id="message-window-id"
+           class="col-lg-6
+                  {% if not current_chat_id %}
+                  hidden-element 
+                  {% endif %}">
         <div class="card">
           <div class="card-body">
-            <h5 id="chat-header-id" class="card-title text-muted text-uppercase text-center">
-              Chat {% if current_contact_username %} with {{current_contact_username}} {% endif %}
+            <h5 id="chat-header-id"
+                class="card-title text-muted text-uppercase text-center">
+            Chat {% if current_chat_name %} with {{current_chat_name}} {% endif %}
             </h5>
-            <input class="form-control" type="search" placeholder="search...">
+            <input class="form-control" 
+                   type="search" 
+                   placeholder="search...">
             <hr>
             {% if current_user %}
-              <div id="message-area-id" class="message-area">
+              <div id="message-area-id" 
+                   class="message-area">
                 {% if messages %}
-                  {% for message in messages.json["messages"]%}
+                  {% for message in messages%}
                   <div class="message">
                     <span> 
                       <b>
@@ -86,7 +102,7 @@
                           {{message["sender_username"]}} 
                         {% endif %}
                       </b> 
-                      <span>{{ message["timestamp"]}}</span>
+                      <span>{{ message["date_created"]}}</span>
                     </span>
                     <br>
                     <span>{{message["text"]}}</span>
@@ -99,15 +115,15 @@
             <hr>
             <div class="message-field-window">
                 <textarea id="message-field-id"
-                      name="message_field" cols="38" 
-                      autofocus maxlength="1000"
-                      minlength="1"
-                      placeholder="your message..."></textarea>
+                          name="message_field" cols="38" 
+                          autofocus maxlength="1000"
+                          minlength="1"
+                          placeholder="your message..."></textarea>
             </div>
 
             <button name="send_message_button"
-                      id="send-message-button-id"
-                      class="btn btn-block btn-primary text-uppercase">Send message</button>
+                    id="send-message-button-id"
+                    class="btn btn-block btn-primary text-uppercase">Send message</button>
           </div>
         </div>
       </div>
