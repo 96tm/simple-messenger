@@ -191,7 +191,7 @@ class ChatWindow {
                               + " "
                               + CURRENT_SELECTED));
 
-              this.messageWindowReference.addMessages(currentUsername, chatName, messages);
+              this.messageWindowReference.addMessages(currentUsername, messages);
               this.messageWindowReference.setChatHeader(chatName);
               this.messageWindowReference.show();
 
@@ -379,7 +379,6 @@ class MessageWindow {
     this.COLUMN_3 = "col-lg-3";
     this.CENTER_FROM_LEFT = "center-from-left";
     this.CENTER_FROM_RIGHT = "center-from-right";
-    this.CHAT_HEADER_PREFIX = "Chat with ";
     this.messageWindow = document.getElementById(messageWindowId);
     this.chatHeader = document.getElementById(chatHeaderId);
     this.messageArea =  document.getElementById(messageAreaId);
@@ -411,19 +410,20 @@ class MessageWindow {
   };
 
   setChatHeader(header) {
-    this.chatHeader.innerText = this.CHAT_HEADER_PREFIX + header;
+    this.chatHeader.innerText = header;
   };
 
-  addMessage(currentUsername, chatName, message) {
+  addMessage(currentUsername, message) {
     const text = message["text"];
 
     const dateCreated = message["date_created"];
+    let sender_username = message["sender_username"];
     let username;
-    if (message["sender_username"] === currentUsername) {
+    if (sender_username === currentUsername) {
         username = "You";
     }
     else {
-        username = chatName;
+        username = sender_username;
     }
     let messageDiv = document.createElement("div");
     let messageSpan = document.createElement("span");
@@ -448,18 +448,17 @@ class MessageWindow {
     this.scrollDown();
   };
 
-  addMessages(currentUsername, chatName, messages, clearArea = true) {
+  addMessages(currentUsername, messages, clearArea = true) {
     if (clearArea) {
       this.messageArea.innerHTML = "";
     }
     
     for (let index = 0; index < messages.length; index++) {
         const message = messages[index];
-        this.addMessage(currentUsername, chatName, message);
+        this.addMessage(currentUsername, message);
     }
   };
 
-  // change contact to chat
   checkNewMessagesAjax(currentChatId) {
     let request = new XMLHttpRequest();
     request.open("POST", "/check_new_messages", true);
@@ -473,10 +472,8 @@ class MessageWindow {
             if (request.status === 200) {
               const response = JSON.parse(request.response);
               const messages = response["messages"];
-              const chatName = response["chat_name"];
               const currentUsername = response["current_username"];
               thisReference.addMessages(currentUsername,
-                                        chatName,
                                         messages, false);
             } else {
               logFailedAjaxRequest(request);
@@ -514,8 +511,7 @@ class MessageWindow {
 
                     thisReference.messageField.value = "";
                     
-                    thisReference.addMessage(currentUsername,
-                                             chatName, message);
+                    thisReference.addMessage(currentUsername, message);
                   } else {
                     logFailedAjaxRequest(request);
                   }

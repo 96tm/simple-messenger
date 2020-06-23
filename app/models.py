@@ -17,6 +17,11 @@ def load_user(user_id):
     return User.query.get(int(user_id))
 
 
+def format_date(date):
+    date_format = '%A, %B %d %Y %H:%M'
+    return date.strftime(date_format)
+
+
 def add_test_data():
     database.create_all()
     bob = User(username='bob', email='bob@bob.bob', 
@@ -40,7 +45,6 @@ def add_test_data():
     chat2.add_users([arthur, morgana])
     database.session.add_all([chat0, chat1, chat2])
     database.session.commit()
-
 
 
 UserChatTable = database.Table(
@@ -233,7 +237,7 @@ class Chat(database.Model):
             removed_chat.chat = chat
             database.session.add(removed_chat)
         database.session.commit()
-
+    
 
 class User(UserMixin, database.Model):
     __tablename__ = 'users'
@@ -373,6 +377,57 @@ class User(UserMixin, database.Model):
                             .in_(removed_chats
                                 .with_entities(RemovedChat.chat_id))))
                 .order_by(Chat.date_modified.desc()).all())
+
+    def get_messages(self, chat):
+        '''
+        Return a list of dictionaries with keys
+        'text', 'date_created', 'sender_username', 'recipient_username'
+        for messages of given user and set column 'was_read' to True
+        for messages received by user and not yet read
+        '''
+        query_to_update = (chat
+                           .messages
+                           .filter(and_(Message.sender != self,
+                                        not_(Message.was_read))))
+
+        messages = chat.messages.order_by(Message.date_created).all()
+
+        message_dict_list = []
+        for message in messages:
+            sender = message.sender
+            recipient = message.recipient
+            sender_name = sender.username if sender else None
+            recipient_name = recipient.username if recipient else None
+            message_dict = {'text': message.text,
+                            'date_created': format_date(message.date_created),
+                            'sender_username': sender_name,
+                            'recipient_username': recipient_name}
+            message_dict_list.append(message_dict)
+        Message.flush_messages(query_to_update)
+        return message_dict_list
+
+    def get_unread_messages(self, chat):
+        '''
+        Return a list of dictionaries with keys 
+        'text', 'sender_username', 'date_created'
+        for unread messages from chat to curent user
+        '''
+        query = (chat
+                 .messages
+                 .filter(and_(Message.sender != self,
+                              not_(Message.was_read))))
+        messages = query.order_by(Message.date_created).all()
+        message_dict_list = []
+        for message in messages:
+            sender = message.sender
+            sender_username = sender.username if sender else None
+            date_created = format_date(message.date_created)
+            message_dict = {'text': message.text,
+                            'sender_username': sender_username,
+                            'date_created': date_created}
+            message_dict_list.append(message_dict)
+        Message.flush_messages(query)
+        return message_dict_list
 
 
 class Message(database.Model):

@@ -2,17 +2,12 @@ from flask import render_template, session, redirect, url_for
 from flask import jsonify, request, flash, abort, current_app
 from . import main
 from .. import database
-from ..models import User, Message, Chat
+from ..models import User, Message, Chat, format_date
 from ..models import UserChatTable, Contact
 from flask_login import login_required, current_user
 from datetime import datetime, timezone
 from sqlalchemy import not_, or_, and_
 from .forms import MessageForm
-
-
-def format_date(date):
-    date_format = '%A, %B %d %Y %H:%M'
-    return date.strftime(date_format)
 
 
 def get_or_create_chat(chat_id):
@@ -22,36 +17,6 @@ def get_or_create_chat(chat_id):
         chat.add_user(user)
         chat.add_user(contact)
     return chat
-
-
-def get_messages(chat):
-    user = current_user._get_current_object()
-    recipient_username = None
-    if chat.is_group_chat:
-        recipient = chat.users.filter(User.id != user.id).first()
-        recipient_username = recipient.username
-
-    query_to_update = (chat
-                       .messages
-                       .filter(and_(Message.sender != user,
-                                    not_(Message.was_read))))
-
-    messages = chat.messages.order_by(Message.date_created).all()
-
-    Message.flush_messages(query_to_update)
-
-    message_list = []
-    for message in messages:
-        sender = message.sender
-        recipient = message.recipient
-        sender_name = sender.username if sender else None
-        recipient_name = recipient.username if recipient else None
-        message_list.append({'text': message.text,
-                             'date_created': format_date(message.date_created),
-                             'sender_username': sender_name,
-                             'recipient_username': recipient_name})
-
-    return message_list
 
 
  # TODO optimize queries
@@ -84,7 +49,6 @@ def add_contacts_and_chats():
                                 'chat_id': chat.id}
                     added_chats.append(chat_data)
             current.add_contacts(new_contacts)
-            print(added_chats)
             data = {'added_chats': added_chats}
             return jsonify(data)
         except ValueError:
@@ -97,29 +61,20 @@ def add_contacts_and_chats():
 def check_new_messages():
     if request.is_json and request.json and request.json.get('chat_id'):
         try:
-            user = current_user._get_current_object()
+            current = current_user._get_current_object()
             chat_id = int(request.json['chat_id'])
             chat = Chat.query.get_or_404(chat_id)
             chat_name = chat.name
             if not chat.is_group_chat:
-                recipient = chat.users.filter(User.id != user.id).first()
+                recipient = chat.users.filter(User.id != current.id).first()
                 chat_name = recipient.username
             else:
                 current_chat_name = chat.name
-            messages = chat.messages.filter(Message.sender != user)
+            
+            message_dict_list = current.get_unread_messages(chat)
 
-            messages_json = []
-            for message in messages.all():
-                sender = message.sender
-                sender_username = sender.username if sender else None
-                date_created = format_date(message.date_created)
-                message_json = {'text': message.text,
-                                'sender_username': sender_username,
-                                'date_created': date_created}
-                messages_json.append(message_json)
-            Message.flush_messages(messages)
-            data = {'messages': messages_json,
-                    'current_username': user.username,
+            data = {'messages': message_dict_list,
+                    'current_username': current.username,
                     'chat_name': chat_name}
             return jsonify(data)
         except ValueError:
@@ -152,23 +107,24 @@ def remove_chat():
 def choose_chat():
     if request.is_json and request.json and request.json.get('chat_id'):
         try:
+            current = current_user._get_current_object()
             chat_id = int(request.json['chat_id'])
             saved_chat_id = session.get('current_chat_id')
             if saved_chat_id == chat_id:
                 session['current_chat_id'] = None
                 return jsonify({'messages': [],
                                 'chat_name': '',
-                                'current_username': current_user.username})
+                                'current_username': current.username})
             chat = Chat.query.get_or_404(chat_id)
             chat_name = chat.name
             if not chat_name:
-                recipient = chat.users.filter(User.id != current_user.id).first()
+                recipient = chat.users.filter(User.id != current.id).first()
                 chat_name = recipient.username
-            messages = get_messages(chat)
+            message_dict_list = current.get_messages(chat)
             session['current_chat_id'] = chat_id
-            return jsonify({'messages': messages,
+            return jsonify({'messages': message_dict_list,
                             'chat_name': chat_name,
-                            'current_username': current_user.username})
+                            'current_username': current.username})
         except ValueError:
             print('Invalid chat')
     flash('Invalid chat')
@@ -176,26 +132,26 @@ def choose_chat():
                     'chat_name': '',
                     'current_username': ''})
 
-
 # TODO
 @main.route('/send_message', methods=['POST'])
 @login_required
 def send_message():
-    if request.is_json and request.json and request.json['message']:
-        message = None
-        chat_name = None
+    if request.is_json and request.json and request.json.get('message'):
         try:
+            current = current_user._get_current_object()
+            message = None
+            chat_name = None            
             text = request.json['message']
             chat_id = int(request.json['chat_id'])
             chat = Chat.query.get_or_404(chat_id)
             recipient = None
             if not chat.is_group_chat:
-                recipient = chat.users.filter(User.id != current_user.id).first()
+                recipient = chat.users.filter(User.id != current.id).first()
                 chat_name = recipient.username
             else:
                 chat_name = chat.name
             message = Message(text = text,
-                              sender=current_user._get_current_object(),
+                              sender=current,
                               recipient=recipient,
                               chat=chat)
             database.session.add(message)
@@ -235,7 +191,7 @@ def index():
         current_chat_id = session.get('current_chat_id')
     if current_chat_id and Chat.query.get(current_chat_id):
         chat = Chat.query.get_or_404(current_chat_id)
-        messages = get_messages(chat)
+        messages = current.get_messages(chat)
         if not chat.is_group_chat:
             recipient = chat.users.filter(User.id != current_user.id).first()
             current_chat_name = recipient.username

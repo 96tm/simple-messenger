@@ -82,7 +82,7 @@
           <div class="card-body">
             <h5 id="chat-header-id"
                 class="card-title text-muted text-uppercase text-center">
-            Chat {% if current_chat_name %} with {{current_chat_name}} {% endif %}
+            {% if current_chat_name %} {{current_chat_name}} {% endif %}
             </h5>
             <input class="form-control" 
                    type="search" 

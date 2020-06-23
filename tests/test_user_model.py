@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 import time
 
 from app import create_app, database
-from app.models import User, Role, Permission
+from app.models import User, Role, Permission, format_date
 from app.models import Contact, Chat, Message, UserChatTable
 from flask import current_app
 import unittest
@@ -223,3 +223,75 @@ class UserModelTestCase(unittest.TestCase):
                          (Chat
                           .query
                           .filter(Chat.users.contains(self.bob)).count() - 1))
+
+    def test_get_messages(self):
+        message1 = Message(text='hi arthur', 
+                           sender=self.bob, recipient=self.arthur,
+                           chat=self.chat_bob_arthur, was_read=True)
+        message2 = Message(text='hi bob', 
+                           sender=self.arthur, recipient=self.bob,
+                           chat=self.chat_bob_arthur)
+        message3 = Message(text='what\'s up', 
+                           sender=self.arthur, recipient=self.bob,
+                           chat=self.chat_bob_arthur)
+        database.session.add_all([message1, message2, message3])
+        database.session.commit()
+        message_dict_1 = {
+                            'text':message1.text,
+                            'date_created': format_date(message1.date_created),
+                            'sender_username': message1.sender.username,
+                            'recipient_username': message1.recipient.username
+                         }
+        message_dict_2 = {
+                            'text':message2.text,
+                            'date_created': format_date(message2.date_created),
+                            'sender_username': message2.sender.username,
+                            'recipient_username': message2.recipient.username
+                         }
+        message_dict_3 = {
+                            'text':message3.text,
+                            'date_created': format_date(message3.date_created),
+                            'sender_username': message3.sender.username,
+                            'recipient_username': message3.recipient.username
+                         }        
+        messages = self.bob.get_messages(self.chat_bob_arthur)
+        self.assertIn(message_dict_1, messages)
+        self.assertIn(message_dict_2, messages)
+        self.assertIn(message_dict_3, messages)
+        self.assertEqual(len(messages), 3)
+        self.assertTrue(message1.was_read)
+        self.assertTrue(message2.was_read)
+        self.assertTrue(message3.was_read)
+
+    def test_get_unread_messages(self):
+        message1 = Message(text='hi arthur', 
+                           sender=self.bob, recipient=self.arthur,
+                           chat=self.chat_bob_arthur, was_read=True)
+        message2 = Message(text='hi bob', 
+                           sender=self.arthur, recipient=self.bob,
+                           chat=self.chat_bob_arthur)
+        message3 = Message(text='what\'s up', 
+                           sender=self.arthur, recipient=self.bob,
+                           chat=self.chat_bob_arthur)
+        message4 = Message(text='see you', 
+                           sender=self.arthur, recipient=self.bob,
+                           chat=self.chat_bob_arthur, was_read=True)
+        database.session.add_all([message1, message2, message3, message4])
+        database.session.commit()
+        message_dict_2 = {
+                            'text':message2.text,
+                            'sender_username': message2.sender.username,
+                            'date_created': format_date(message2.date_created)
+                         }
+        message_dict_3 = {
+                            'text':message3.text,
+                            'sender_username': message3.sender.username,
+                            'date_created': format_date(message3.date_created)
+                         }        
+        messages = self.bob.get_unread_messages(self.chat_bob_arthur)
+        self.assertIn(message_dict_2, messages)
+        self.assertIn(message_dict_3, messages)
+        self.assertEqual(len(messages), 2)
+        self.assertTrue(message1.was_read)
+        self.assertTrue(message2.was_read)
+        self.assertTrue(message3.was_read)
