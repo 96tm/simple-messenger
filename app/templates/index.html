@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 
 {% block title %}
-    SimpleChat {% if current_user.username %}- {{current_user.username}} {% endif %}
+  SimpleMessenger {% if current_user.username %}- {{current_user.username}} {% endif %}
 {% endblock %}
 
 {% block styles %}
 {{ super() }}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
 {% endblock %}
 
 {% block page_content %}
@@ -18,7 +18,7 @@
         <div class="card mb-5 mb-lg-0">
           <div class="card-body">
             <h5 class="card-title text-muted text-uppercase text-center">Find users</h5>
-            <input class="form-control" type="search" placeholder="search...">
+              {{user_search_form.search_field()}}
             <hr>
             <div class="user-list">
                 <ul id="user-list-id" class="fa-ul">
@@ -43,7 +43,7 @@
         <div class="card mb-5 mb-lg-0">
           <div class="card-body">
             <h5 class="card-title text-muted text-uppercase text-center">Your chats</h5>
-            <input class="form-control" type="search" placeholder="search...">
+              {{chat_search_form.search_field()}}
             <hr>
             <div class="chat-list">
               <ul id="chat-list-id" class="fa-ul">
@@ -62,17 +62,18 @@
                 </li>
                 {% endif %}
               </ul>
+              <button id="remove-selected-chat-id"
+                      class="btn btn-block btn-primary 
+                             text-uppercase 
+                             {% if not current_chat_id %} 
+                             hidden-element 
+                             {% endif %}">Remove</button>
             </div>
-            <button id="remove-selected-chat-id"
-                    class="btn btn-block btn-primary 
-                           text-uppercase 
-                           {% if not current_chat_id %} 
-                           hidden-element 
-                           {% endif %}">Remove</button>
           </div>
         </div>
       </div>
-      <!-- Chat -->
+      
+      <!-- Message window -->
       <div id="message-window-id"
            class="col-lg-6
                   {% if not current_chat_id %}
@@ -84,10 +85,7 @@
                 class="card-title text-muted text-uppercase text-center">
             {% if current_chat_name %} {{current_chat_name}} {% endif %}
             </h5>
-            <input class="form-control" 
-                   type="search" 
-                   placeholder="search...">
-            <hr>
+
             {% if current_user %}
               <div id="message-area-id" 
                    class="message-area">
@@ -101,7 +99,7 @@
                         {% else %} 
                           {{message["sender_username"]}} 
                         {% endif %}
-                      </b> 
+                      </b>
                       <span>{{ message["date_created"]}}</span>
                     </span>
                     <br>
@@ -113,14 +111,9 @@
               </div>
             {% endif %}
             <hr>
-            <div class="message-field-window">
-                <textarea id="message-field-id"
-                          name="message_field" cols="38" 
-                          autofocus maxlength="1000"
-                          minlength="1"
-                          placeholder="your message..."></textarea>
-            </div>
-
+              <div class="message-field-window">
+                {{message_form.message_field()}}
+              </div>
             <button name="send_message_button"
                     id="send-message-button-id"
                     class="btn btn-block btn-primary text-uppercase">Send message</button>

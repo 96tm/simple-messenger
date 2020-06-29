@@ -7,6 +7,7 @@
     {% endblock %}
 
     {% block styles %}
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
         <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" 
               integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" 
               crossorigin="anonymous">
@@ -16,7 +17,7 @@
     
     <title>
         {% block title %}
-            Simple Chat 
+            Simple Messenger
         {% endblock %}
     </title>
 
@@ -24,7 +25,7 @@
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark static-top">
         <div class="container">
             <a class="navbar-brand" href="{{ url_for('main.index') }}">
-                    SimpleChat
+                    SimpleMessenger
             </a>
             <button class="navbar-toggler" type="button" data-toggle="collapse" 
                     data-target="#navbarResponsive" aria-controls="navbarResponsive"
@@ -65,13 +66,20 @@
     <div>
         {% block page_content %}
         {% endblock %}
-        <footer id="footer" class="py-4 bg-dark text-white-50">
-            <div class="container text-center">
-                {% block footer %}
-                <small>Favicon made by <a href="https://www.flaticon.com/authors/freepik" title="Freepik">Freepik</a> from <a href="https://www.flaticon.com/" title="Flaticon"> www.flaticon.com</a></small>
-                {% endblock %}
-            </div>
-        </footer>
+        {% block footer %}
+            <footer id="footer" 
+                    class="{%block footer_class%} py-4 bg-dark text-white-50 {%endblock%}">
+                <div class="container text-center">
+                    <small>
+                        Favicon made by 
+                        <a href="https://www.flaticon.com/authors/freepik" 
+                           title="Freepik">Freepik</a> from 
+                           <a href="https://www.flaticon.com/" 
+                              title="Flaticon"> www.flaticon.com</a>
+                    </small>
+                </div>
+            </footer>
+        {% endblock %}
     </div>
 </body>
 {% block scripts %}

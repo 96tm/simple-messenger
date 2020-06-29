@@ -21,18 +21,24 @@ class ChatModelTestCase(unittest.TestCase):
                             email='morgana@morgana.morgana', confirmed=True)
         self.ophelia = User(username='ophelia', password='ophelia',
                             email='ophelia@ophelia.ophelia', confirmed=True)
+        self.artorias = User(username='artorias', password='artorias',
+                             email='artorias@artorias.artorias', confirmed=True)
 
         self.chat_bob_arthur = Chat()
+        self.chat_bob_artorias = Chat()
         self.chat_bob_clair = Chat()
         self.chat_morgana_arthur = Chat()
-        self.chat_morgana_bob = Chat()
+        self.chat_morgana_bob = Chat(name='chat_morgana_bob_')
         self.chat_bob_arthur.add_users([self.bob, self.arthur])
+        self.chat_bob_artorias.add_users([self.bob, self.artorias])
         self.chat_bob_clair.add_users([self.bob, self.clair])
         self.chat_morgana_arthur.add_users([self.arthur, self.morgana])
         self.chat_morgana_bob.add_users([self.bob, self.morgana])
         database.session.add_all([self.bob, self.arthur, self.ophelia,
+                                  self.artorias,
                                   self.clair, self.morgana, 
                                   self.chat_bob_arthur,
+                                  self.chat_bob_artorias,
                                   self.chat_bob_clair,
                                   self.chat_morgana_arthur,
                                   self.chat_morgana_bob])
@@ -120,4 +126,28 @@ class ChatModelTestCase(unittest.TestCase):
                       query.all())
         self.assertEqual(query.count(), 2)
 
+    def test_get_name(self):
+        self.assertEqual(self.chat_morgana_bob.get_name(self.bob),
+                         self.chat_morgana_bob.name)
+        self.assertEqual(self.chat_morgana_bob.get_name(self.morgana),
+                         self.chat_morgana_bob.name)
+        self.assertEqual(self.chat_bob_arthur.get_name(self.bob),
+                         self.arthur.username)
+        self.assertEqual(self.chat_bob_arthur.get_name(self.arthur),
+                         self.bob.username)
+
+    def test_search_chats_query(self):
+        chats = Chat.search_chats_query('mor', self.bob).all()
+        self.assertIn(self.chat_morgana_bob, chats)
+        self.assertEqual(len(chats), 1)
+        self.chat_morgana_bob.name = 'chat'
+        chats = Chat.search_chats_query('chat', self.bob).all()
+        self.assertIn(self.chat_morgana_bob, chats)
+        self.assertEqual(len(chats), 1)
+        chats = Chat.search_chats_query('wrong', self.bob).all()
+        self.assertEqual(len(chats), 0)
+        chats = Chat.search_chats_query('art', self.bob).all()
+        self.assertIn(self.chat_bob_arthur, chats)
+        self.assertIn(self.chat_bob_artorias, chats)
+        self.assertEqual(len(chats), 2)
 

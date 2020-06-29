@@ -1,9 +1,8 @@
-from datetime import datetime, timezone
 import time
 
 from app import create_app, database
-from app.models import User, Role, Permission, format_date
-from app.models import Contact, Chat, Message, UserChatTable
+from app.models import Contact, Chat, format_date, Message
+from app.models import User, UserChatTable, Role, Permission
 from flask import current_app
 import unittest
 
@@ -52,6 +51,14 @@ class UserModelTestCase(unittest.TestCase):
         database.drop_all()
         self.app_context.pop()
 
+    def t1est_expired_confirmation_token(self):
+        user = User(password='pass', email='user@user.user', username='user')
+        database.session.add(user)
+        database.session.commit()
+        token = user.generate_confirmation_token(1)
+        time.sleep(2)
+        self.assertFalse(user.confirm(token))
+
     def test_password_setter(self):
         self.assertTrue(self.bob.password_hash is not None)
     
@@ -81,6 +88,14 @@ class UserModelTestCase(unittest.TestCase):
         self.assertTrue(self.bob.contacts.count() == 2)
         self.assertTrue(self.clair.contacted.count() == 1)
         self.assertTrue(Contact.query.count() == 2)
+    
+    def test_has_contact(self):
+        self.assertTrue(self.bob.has_contact(self.clair))
+        self.assertFalse(self.bob.has_contact(self.arthur))
+    
+    def test_is_contacted_by(self):
+        self.assertTrue(self.clair.is_contacted_by(self.bob))
+        self.assertFalse(self.arthur.is_contacted_by(self.bob))
         
     def test_delete_contacts(self):
         self.bob.delete_contacts([self.clair])
@@ -100,14 +115,6 @@ class UserModelTestCase(unittest.TestCase):
         token2 = user2.generate_confirmation_token()
         self.assertFalse(user1.confirm(token2))
         self.assertTrue(user1.confirm(token1))
-    
-    def t1est_expired_confirmation_token(self):
-        user = User(password='pass', email='user@user.user', username='user')
-        database.session.add(user)
-        database.session.commit()
-        token = user.generate_confirmation_token(1)
-        time.sleep(2)
-        self.assertFalse(user.confirm(token))
     
     def test_roles(self):
         Role.insert_roles()
@@ -195,24 +202,25 @@ class UserModelTestCase(unittest.TestCase):
                          set([message1, message2, message3, message4]))
         self.assertEqual(self.chat_bob_arthur, found_chat)
 
-    def test_get_other_users(self):
+    def test_get_other_users_query(self):
+        bob_other_users = self.bob.get_other_users_query().all()
         self.assertIn(self.clair,
-                      self.bob.get_other_users())
+                      bob_other_users)
         self.assertIn(self.morgana,
-                      self.bob.get_other_users())
+                      bob_other_users)
         self.assertIn(self.arthur,
-                      self.bob.get_other_users())
-        self.assertEqual(len(self.bob.get_other_users()),
+                      bob_other_users)
+        self.assertEqual(len(bob_other_users),
                          User.query.count() - 1)
 
-    def test_get_available_chats(self):
-        chats = self.bob.get_available_chats()
+    def test_get_available_chats_query(self):
+        chats = self.bob.get_available_chats_query().all()
         self.assertEqual(chats,
                          (Chat
                           .query
                           .filter(Chat.users.contains(self.bob)).all()))
         Chat.mark_chats_as_removed(self.bob, [self.chat_bob_arthur])
-        chats = self.bob.get_available_chats()
+        chats = self.bob.get_available_chats_query().all()
         self.assertNotEqual(chats,
                             (Chat
                              .query
@@ -295,3 +303,29 @@ class UserModelTestCase(unittest.TestCase):
         self.assertTrue(message1.was_read)
         self.assertTrue(message2.was_read)
         self.assertTrue(message3.was_read)
+
+    def test_search_users_query(self):
+        other_users_query = self.bob.get_other_users_query()
+        artorias = User(username='artorias', 
+                        password='artorias',
+                        email='artorias@artorias.artorias', 
+                        confirmed=True)
+        self.assertEqual(self.bob
+                         .search_users_query('bob', other_users_query)
+                         .all(), [])
+        self.assertIn(self.morgana,
+                      self.bob
+                      .search_users_query('morgana', other_users_query)
+                      .all())                      
+        self.assertIn(self.arthur,
+                      self.bob
+                      .search_users_query('art', other_users_query)
+                      .all())
+        self.assertIn(artorias,
+                      self.bob
+                      .search_users_query('art', other_users_query)
+                      .all())
+        self.assertEqual(self
+                         .bob
+                         .search_users_query('art', other_users_query)
+                         .count(), 2)

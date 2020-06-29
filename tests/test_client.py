@@ -55,7 +55,7 @@ class ClientTestCase(unittest.TestCase):
             'email': 'confirmed@confirmed.confirmed',
             'password': 'pass'
         }, follow_redirects=True)
-        self.assertIn(f'SimpleChat - {user.username}',
+        self.assertIn(f'SimpleMessenger - {user.username}',
                       response.get_data(as_text=True))
 
     

@@ -1,9 +1,16 @@
 {% extends "base.html" %}
 
-{% block title %}SimpleChat - Server Error{% endblock %}
+{% block title %}SimpleMessenger - Server Error{% endblock %}
 
 {% block page_content %}
 <div class="page-header">
-    <h1>Server error</h1>
+    <div class="error-message">
+        <h1>Server error</h1>
+    </div>
 </div>
+{% endblock %}
+
+{% block footer_class %}
+    {{super()}}
+    fixed-bottom
 {% endblock %}

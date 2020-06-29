@@ -33,9 +33,18 @@
     padding-bottom: .5em;
   }
 
+  button#remove-selected-chat-id,
+  button#add-contacts-id{
+    margin-top: 3.4em;
+  }
+
+  input[type=search]::placeholder {
+    font-size: medium;
+  }
+
   .message-area{
     overflow-y: scroll;
-    height: 7em;
+    height: 12em;
     border: 1px solid #ced4da;
     border-radius: .25rem;
     transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;
@@ -66,16 +75,6 @@
   li.user-item{
     cursor: pointer;
     list-style: none;
-  }
-
-  li.chat-item:before{
-      content: '';
-      display: inline-block;
-      height: .7em;
-      width: .7em;
-      background-image: url('../img/offline.png');
-      background-size:contain;
-      background-repeat:no-repeat;
   }
 
   li.chat-item:hover,

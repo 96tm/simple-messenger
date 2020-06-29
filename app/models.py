@@ -14,15 +14,28 @@ from werkzeug.security import generate_password_hash, check_password_hash
 
 @login_manager.user_loader
 def load_user(user_id):
+    """
+    Set up current user
+    """
     return User.query.get(int(user_id))
 
 
 def format_date(date):
+    """
+    Return string representation of given date
+
+    :param date: DateTime instance
+    :returns: string
+    """
     date_format = '%A, %B %d %Y %H:%M'
     return date.strftime(date_format)
 
 
 def add_test_data():
+    """
+    Load data to database
+    for testing purposes.
+    """
     database.create_all()
     bob = User(username='bob', email='bob@bob.bob', 
                password='bob', confirmed=True)
@@ -47,6 +60,8 @@ def add_test_data():
     database.session.commit()
 
 
+# association table for many-to-many relationship
+# between User model and Chat model
 UserChatTable = database.Table(
     'user_chat_link',
     database.Column('user_id',
@@ -63,6 +78,11 @@ UserChatTable = database.Table(
 
 
 class RemovedChat(database.Model):
+    """
+    Association table
+    to keep track of which users
+    mark which chats as removed.
+    """
     __tablename__ = 'removed_chats'
     user_id = database.Column(database.Integer, 
                               database.ForeignKey('users.id',
@@ -75,6 +95,14 @@ class RemovedChat(database.Model):
 
 
 class Role(database.Model):
+    """
+    Represents user role for managing
+    permission.
+
+    Static methods defined here:
+
+    insert_roles(roles=None)
+    """
     __tablename__ = 'roles'
     id = database.Column(database.Integer, primary_key=True)
     name = database.Column(database.String(64), unique=True)
@@ -95,6 +123,16 @@ class Role(database.Model):
     
     @staticmethod
     def insert_roles(roles=None):
+        """
+        Insert given roles to database.
+        Insert a default set of roles if
+        called with no parameters.
+
+        :param roles: dictionary of roles
+                      in the form 
+                      {'role_name': {'permissions': int, 
+                                     'is_default': bool}}
+        """
         if roles is None:
             roles = {'Admin': {'permissions': 0xff, 
                                'is_default': False},
@@ -112,6 +150,11 @@ class Role(database.Model):
 
 
 class Contact(database.Model):
+    """
+    Association table
+    representing many-to-many relationship
+    among User model instances.
+    """
     __tablename__ = 'contacts'
     user_id = database.Column(database.Integer,
                               database.ForeignKey('users.id'),
@@ -126,6 +169,38 @@ class Contact(database.Model):
 
 
 class Chat(database.Model):
+    """
+    Represents a chat,
+    which is defined as a collection of
+    users and messages.
+    
+
+    Methods defined here:
+
+    get_name()
+
+    add_users(users)
+
+    delete_users(users)
+
+    get_chat(user_1, user_2)
+
+
+    Static methods defined here:
+
+    search_chats_query(chat_name, user)
+
+    get_removed_query(user, chat_query=None)
+
+    get_chat_query(user, user_ids)
+
+    mark_chats_as_removed(user, chats)
+
+
+    Class methods defined here:
+
+    get_removed_chats(user, user_ids)
+    """
     __tablename__ = 'chats'
 
     id = database.Column(database.Integer, primary_key=True)
@@ -141,35 +216,134 @@ class Chat(database.Model):
                                           lazy='dynamic',
                                           cascade='all, delete-orphan')
 
+    def get_name(self, user):
+        """
+        Return current chat's 'name' if present,
+        otherwise return 'username'
+        of first user of current chat's users attribute
+        which is not equal to given user's username
+
+        :param user: User model instance
+        :returns: string
+        """
+        if self.name:
+            return self.name
+        recipient = (self
+                     .users
+                     .filter(User.username != user.username)
+                     .first())
+        return recipient.username
+
     def add_users(self, users):
+        """
+        Add given users to current chat.
+
+        :param users: sequence of User model instances
+        """
         for user in users:
             if not user in self.users.all():
                 self.users.append(user)
         database.session.commit()
     
     def remove_users(self, users):
+        """
+        Delete given users from current chat.
+
+        :param users: sequence of User model instances
+        """
         for user in users:
             self.users.remove(user)
         database.session.commit()
     
     @staticmethod
-    def get_chat(user1, user2):
-        '''
-        Return chat between user1 and user2
-        '''
+    def search_chats_query(chat_name, user):
+        """
+        Return query of chats
+        where each chat either:
+        - contains given chat_name in 'name' column;
+        - has only two users ('is_group_chat' is False and 'name' is None),
+          and the user with 'username' != given user's 'username'
+          contains given chat_name in 'username'.
+
+        :param chat_name: string to search for
+        :param user: user whose 'username' is excluded from search,
+                     i.e. if 
+                     chat.users == [User(username='bob'), 
+                                    User(username='arthur')] 
+                     and chat.name == None, 
+                     then search_chats('bob', User(username='bob'))
+        :returns: Chat model query
+        """
+        subquery_current = (User
+                            .query
+                            .filter(User
+                                    .username == user.username)
+                            .subquery())
+        subquery_pattern = (User
+                            .query
+                            .filter(User.username != user.username,
+                                    User
+                                    .username
+                                    .like('%' + chat_name + '%'))
+                            .subquery())
+        subquery_current_chats = (database
+                                 .session
+                                 .query(UserChatTable.c.chat_id)
+                                 .join(subquery_current,
+                                       UserChatTable
+                                       .c
+                                       .user_id == subquery_current.c.id)
+                                 .subquery())
+        subquery_pattern_chats = (database
+                                  .session
+                                  .query(UserChatTable.c.chat_id)
+                                  .join(subquery_pattern,
+                                        UserChatTable
+                                        .c
+                                        .user_id == subquery_pattern.c.id)
+                                  .subquery())
+        chats = (database
+                 .session
+                 .query(Chat)
+                 .join(subquery_current_chats,
+                       Chat.id == subquery_current_chats.c.chat_id)
+                 .join(subquery_pattern_chats,
+                       subquery_current_chats
+                       .c
+                       .chat_id == subquery_pattern_chats.c.chat_id))
+
+        return (database
+                .session
+                .query(Chat)
+                .filter(Chat.users.contains(user), Chat.name.like('%' + chat_name + '%'))
+                .union(chats))
+    
+    @staticmethod
+    def get_chat(user_1, user_2):
+        """
+        Return chat between user_1 and user_2
+
+        :param user_1: User model instance
+        :param user_2: User model instance
+        :returns: Chat model instance
+        """
         return (Chat
                 .query
-                .filter(and_(Chat.users.contains(user1),
-                             Chat.users.contains(user2),
+                .filter(and_(Chat.users.contains(user_1),
+                             Chat.users.contains(user_2),
                              not_(Chat.is_group_chat)))
                 .first())
 
     @staticmethod
     def get_removed_query(user, chat_query=None):
-        '''
-        Return RemovedChat instances for user
-        (based on chat query, if given)
-        '''
+        """
+        Return RemovedChat query for user
+        (based on chat query, if given).
+
+        :param user: User model instance
+        :param chat_query: Chat model query
+        :returns: RemovedChat model query
+        """
         if chat_query:
             return (RemovedChat
                     .query
@@ -190,9 +364,15 @@ class Chat(database.Model):
 
     @staticmethod
     def get_chat_query(user, user_ids):
-        '''
-        Return chats of user with users identified by user_ids
-        '''
+        """
+        Return query of chats 
+        of given user with users 
+        identified by given user_ids
+        
+        :param user: User model instance
+        :param user_ids: sequence of integers
+        :returns: Chat model query
+        """
         return (Chat
                 .query
                 .filter(Chat.users.contains(user))
@@ -202,14 +382,36 @@ class Chat(database.Model):
                         )
                     )
                 )
+
+    @staticmethod
+    def mark_chats_as_removed(user, chats):
+        """
+        Add RemovedChat record
+        for each chat in given chats for given user.
+        
+        :param user: User model instance
+        :param chats: sequence of Chat model instances
+        """
+        for chat in chats:
+            removed_chat = RemovedChat()
+            removed_chat.user = user
+            removed_chat.chat = chat
+            database.session.add(removed_chat)
+        database.session.commit()
     
     @classmethod
     def get_removed_chats(cls, user, user_ids):
-        '''
-        Return list of user's chats
-        from users having user_ids marked as removed
-        and delete records about the chats from RemovedChat
-        '''
+        """
+        Return list of chats of given user
+        with users having
+        given user_ids
+        which are marked as removed by current user.
+        Delete records about the chats from RemovedChat.
+        
+        :param user: User model instance
+        :param user_ids: sequence of integers
+        :returns: list of Chat model instances
+        """
         chat_query = cls.get_chat_query(user, user_ids)
         removed_chat_query = cls.get_removed_query(user, chat_query)
         chats = (chat_query
@@ -225,21 +427,41 @@ class Chat(database.Model):
                 )
         removed_chat_query.delete(synchronize_session='fetch')
         return chats
-  
-    @staticmethod
-    def mark_chats_as_removed(user, chats):
-        '''
-        Add a record to RemovedChat for user and each chat in chats sequence
-        '''
-        for chat in chats:
-            removed_chat = RemovedChat()
-            removed_chat.user = user
-            removed_chat.chat = chat
-            database.session.add(removed_chat)
-        database.session.commit()
-    
+
 
 class User(UserMixin, database.Model):
+    """
+    User model. Implements UserMixin, 
+    used as a default authentication model by Flask-Login.
+
+    Methods defined here:
+
+    has_permission(permission)
+
+    verify_password(password)
+    
+    generate_confirmation_token(expiration=3600)
+    
+    confirm(token)
+    
+    has_contact(user)
+    
+    is_contacted_by(user)
+    
+    add_contacts(users, contact_group=None)
+    
+    delete_contacts(users)
+    
+    get_other_users_query()
+    
+    get_available_chats_query()
+    
+    get_messages(chat)
+    
+    get_unread_messages(chat)
+    
+    search_users_query(username, users_query)
+    """
     __tablename__ = 'users'
     id = database.Column(database.Integer, primary_key=True)
     confirmed = database.Column(database.Boolean, default=False)
@@ -301,48 +523,71 @@ class User(UserMixin, database.Model):
     
     @property
     def is_admin(self):
-        return self.role and self.has_permission(Permission.ADMINISTRATION)
+        """
+        Check if current user has admin permissions.
 
-    def has_permission(self, permission):
-        return (self.role is not None
-                and (self.role.permissions & permission == permission))
-    
+        :returns: True if current user has admin permission,
+                  False otherwise
+        """
+        return self.role and self.has_permission(Permission.ADMINISTRATION)
+   
     @property
     def password(self):
         raise AttributeError('Password is not a readable attribute')
 
     @password.setter
     def password(self, password):
+        """
+        Assign given password to current user.
+
+        :param password: string
+        """
         self.password_hash = generate_password_hash(password)
     
+    def has_permission(self, permission):
+        """
+        Check if current user has given permission
+
+        :param permission: integer representing permission
+        :returns: True if current user has a role
+                  and the role has permission,
+                  False otherwise
+
+        """
+        return (self.role is not None
+                and (self.role.permissions & permission == permission))
+    
+    
     def verify_password(self, password):
+        """
+        Check if given password matches current user's password.
+
+        :param password: string
+        :returns: True if password matches current user's password, 
+                  False otherwise
+        """
         return check_password_hash(self.password_hash, password)
     
-    def has_contact(self, user):
-        return bool(self.contacts.filter_by(contact_id=user.id).first())
-    
-    def is_contacted_by(self, user):
-        return bool(self.contacted.filter_by(user_id=user.id).first())
-    
-    def add_contacts(self, users, contact_group=None):
-        for user in users:
-            if not self.has_contact(user):
-                relation = Contact(user=self, 
-                                   contact=user,
-                                   contact_group=contact_group)
-                database.session.add(relation)
-
-    def delete_contacts(self, users):
-        for user in users:
-            if self.has_contact(user):
-                relation = self.contacts.filter_by(contact_id=user.id).first()
-                database.session.delete(relation)
-    
     def generate_confirmation_token(self, expiration=3600):
+        """
+        Return a confirmation token for current user.
+
+        :param expiration: Time in seconds after which token expires
+        :returns: TimedJSONWebSignature
+        """
         serializer = Serializer(current_app.config['SECRET_KEY'], expiration)
         return serializer.dumps({'confirm': self.id})
     
     def confirm(self, token):
+        """
+        Check that given token belongs to current user
+        and set current user's 'confirmed' column to True
+        if it does.
+
+        :param token: TimedJSONWebSignature instance
+        :returns: True if given token belongs to current user,
+                  False otherwise
+        """
         serializer = Serializer(current_app.config['SECRET_KEY'])
         try:
             data = serializer.loads(token)
@@ -353,21 +598,71 @@ class User(UserMixin, database.Model):
         self.confirmed = True
         database.session.add(self)
         return True
+
+    def has_contact(self, user):
+        """
+        Check if current user has given user as a contact.
+
+        :param user: User model instance
+        :returns: True if current user has user as a contact,
+                  False otherwise
+        """
+        return bool(self.contacts.filter_by(contact_id=user.id).first())
     
-    def get_other_users(self):
-        '''
-        Return list of users not including user
-        '''
+    def is_contacted_by(self, user):
+        """
+        Check if given user has current user as a contact
+
+        :param user: User model instance
+        :returns: True if user has current user as a contact,
+                  False otherwise
+        """
+        return bool(self.contacted.filter_by(user_id=user.id).first())
+    
+    def add_contacts(self, users, contact_group=None):
+        """
+        Add users to contacts of current user.
+
+        :param users: list of User model instances
+        :param contact_group: name of contact group
+        """
+        for user in users:
+            if not self.has_contact(user):
+                relation = Contact(user=self, 
+                                   contact=user,
+                                   contact_group=contact_group)
+                database.session.add(relation)
+
+    def delete_contacts(self, users):
+        """
+        Delete users from contacts of current user.
+
+        :param users: sequence of User model instances
+        """
+        for user in users:
+            if self.has_contact(user):
+                relation = self.contacts.filter_by(contact_id=user.id).first()
+                database.session.delete(relation)
+    
+    def get_other_users_query(self):
+        """
+        Return query of users not including user
+        ordered by column 'username' in ascending order.
+
+        :returns: User model query
+        """
         return (User
                 .query
                 .filter(User.id != self.id)
-                .order_by(User.username)
-                .all())
+                .order_by(User.username))
     
-    def get_available_chats(self):
-        '''
-        Return query of user's chats not marked as removed
-        '''
+    def get_available_chats_query(self):
+        """
+        Return query of current user's chats 
+        not marked as removed.
+
+        :returns: User model query
+        """
         removed_chats = Chat.get_removed_query(self)
         return (Chat
                 .query
@@ -376,15 +671,18 @@ class User(UserMixin, database.Model):
                             .id
                             .in_(removed_chats
                                 .with_entities(RemovedChat.chat_id))))
-                .order_by(Chat.date_modified.desc()).all())
+                .order_by(Chat.date_modified.desc()))
 
     def get_messages(self, chat):
-        '''
+        """
         Return a list of dictionaries with keys
         'text', 'date_created', 'sender_username', 'recipient_username'
-        for messages of given user and set column 'was_read' to True
-        for messages received by user and not yet read
-        '''
+        for messages of given chat and set column 'was_read' to True
+        for messages received by user and not yet read.
+
+        :param chat: Chat model instance
+        :returns: list of dictionaries
+        """
         query_to_update = (chat
                            .messages
                            .filter(and_(Message.sender != self,
@@ -407,11 +705,14 @@ class User(UserMixin, database.Model):
         return message_dict_list
 
     def get_unread_messages(self, chat):
-        '''
+        """
         Return a list of dictionaries with keys 
         'text', 'sender_username', 'date_created'
-        for unread messages from chat to curent user
-        '''
+        for unread messages from given chat to curent user.
+
+        :param chat: Chat model instance
+        :returns: list of dictionaries
+        """
         query = (chat
                  .messages
                  .filter(and_(Message.sender != self,
@@ -429,8 +730,30 @@ class User(UserMixin, database.Model):
         Message.flush_messages(query)
         return message_dict_list
 
+    def search_users_query(self, username, users_query):
+        """
+        Return query of users from given users_query
+        containing string in 'username'
+        except current user
+        in ascending lexicographical order by 'username'.
+
+        :param username: string to search in 'username' columns
+        :param users_query: User model query to search
+        :returns: User model query
+        """
+        query = (users_query
+                 .filter(User.username.like('%' + username + '%')))
+        return query
+
 
 class Message(database.Model):
+    """
+    Message model.
+
+    Static methods defined here:
+
+    flush_messages(message_query)
+    """
     __tablename__ = 'messages'
 
     id = database.Column(database.Integer, primary_key = True)
@@ -459,15 +782,21 @@ class Message(database.Model):
 
     def __repr__(self):
         return (f'Message(id={self.id}, text={self.text}, ' 
-                + f'sender={self.sender.username}, '
-                + f'recipient={self.recipient.username}, ' 
-                + f'date_created={self.date_created})')
+                + f'sender={self.sender}, '
+                + f'recipient={self.recipient}, ' 
+                + f'was_read={self.was_read}, '
+                + f'text={self.text}, '
+                + f'chat={self.chat}, '
+                + f'date_created={self.date_created})'
+               )
     
-    @staticmethod
+    @staticmethod  
     def flush_messages(message_query):
-        '''
-        Set 'was_read' column to True for all messages from message_query
-        '''
+        """
+        Set 'was_read' column to True for all messages from message_query.
+
+        :param message_query: Message model query
+        """
         message_query.update({'was_read': True}, synchronize_session=False)
         database.session.commit()
 

@@ -9,6 +9,9 @@ class Config:
     MAIL_SENDER = os.environ.get('MAIL_SENDER', 'Admin <use@some.mail')
     ADMIN = os.environ.get('SIMPLE_MESSENGER_ADMIN', 'Admin')
     ADMIN_MAIL = 'admin@admin.admin'
+    MAX_STRING_LENGTH = 64
+    USERS_PER_PAGE = 10
+    CHATS_PER_PAGE = 10
 
     @staticmethod
     def init_app(app):
