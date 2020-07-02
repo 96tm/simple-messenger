@@ -5,6 +5,7 @@ class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY', 'change_debug_secret_key!')
     SQLALCHEMY_COMMIT_ON_TEARDOWN = True
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    
     MAIL_SUBJECT_PREFIX = '[SimpleMessenger]'
     MAIL_SENDER = os.environ.get('MAIL_SENDER', 'Admin <use@some.mail')
     ADMIN = os.environ.get('SIMPLE_MESSENGER_ADMIN', 'Admin')
@@ -12,6 +13,7 @@ class Config:
     MAX_STRING_LENGTH = 64
     USERS_PER_PAGE = 10
     CHATS_PER_PAGE = 10
+    MESSAGES_PER_PAGE = 10
 
     @staticmethod
     def init_app(app):

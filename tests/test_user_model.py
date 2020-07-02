@@ -246,19 +246,19 @@ class UserModelTestCase(unittest.TestCase):
         database.session.commit()
         message_dict_1 = {
                             'text':message1.text,
-                            'date_created': format_date(message1.date_created),
+                            'date_created': message1.date_created,
                             'sender_username': message1.sender.username,
                             'recipient_username': message1.recipient.username
                          }
         message_dict_2 = {
                             'text':message2.text,
-                            'date_created': format_date(message2.date_created),
+                            'date_created': message2.date_created,
                             'sender_username': message2.sender.username,
                             'recipient_username': message2.recipient.username
                          }
         message_dict_3 = {
                             'text':message3.text,
-                            'date_created': format_date(message3.date_created),
+                            'date_created': message3.date_created,
                             'sender_username': message3.sender.username,
                             'recipient_username': message3.recipient.username
                          }        
@@ -289,12 +289,12 @@ class UserModelTestCase(unittest.TestCase):
         message_dict_2 = {
                             'text':message2.text,
                             'sender_username': message2.sender.username,
-                            'date_created': format_date(message2.date_created)
+                            'date_created': message2.date_created
                          }
         message_dict_3 = {
                             'text':message3.text,
                             'sender_username': message3.sender.username,
-                            'date_created': format_date(message3.date_created)
+                            'date_created': message3.date_created
                          }        
         messages = self.bob.get_unread_messages(self.chat_bob_arthur)
         self.assertIn(message_dict_2, messages)

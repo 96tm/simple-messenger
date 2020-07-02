@@ -1,8 +1,9 @@
 from . import main
 from .. import database
-from ..models import Chat, Contact, format_date, Message 
+from ..models import Chat, Contact, Message 
 from ..models import UserChatTable, User
 
+from datetime import datetime, timezone
 from flask import current_app, escape, request
 from flask import jsonify, session
 from flask_login import current_user, login_required
@@ -34,21 +35,21 @@ def add_contacts_and_chats():
             user_ids = [int(user_id) for user_id in request.json['user_ids']]
             chats = Chat.get_removed_chats(current_user, user_ids)
             added_chats = [{'chat_name': chat.get_name(current_user),
-                            'chat_id': chat.id}
+                            'chat_id': str(chat.id)}
                            for chat
                            in chats]
             for user_id in user_ids:
                 user = User.query.get_or_404(user_id)
                 if not current_user.has_contact(user):
                     new_contacts.append(user)
-                chat = Chat.get_chat(current_user, user)
+                chat = Chat.get_chat([current_user, user])
                 if not chat:
                     chat = Chat()
                     database.session.add(chat)
                     chat.add_users([current_user, user])
                     database.session.commit()
                     chat_data = {'chat_name': chat.get_name(current_user),
-                                 'chat_id': chat.id}
+                                 'chat_id': str(chat.id)}
                     added_chats.append(chat_data)
             current_user.add_contacts(new_contacts)
             data = {'added_chats': added_chats}
@@ -69,8 +70,25 @@ def check_new_messages():
                 chat = Chat.query.get_or_404(chat_id)
                 message_dict_list = current_user.get_unread_messages(chat)
                 data = {'messages': message_dict_list,
-                        'current_username': current_user.username,
-                        'chat_name': chat.get_name(current_user)}
+                        'current_username': current_user.username}
+                return jsonify(data)
+            except (ValueError, OverflowError):
+                return generate_json_response(400)
+    return generate_json_response(404)
+
+
+@main.route('/load_messages', methods=['POST'])
+@login_required
+def load_messages():
+    if (request.is_json 
+        and request.json 
+        and request.json.get('chat_id') is not None):
+            try:
+                chat_id = int(request.json['chat_id'])
+                chat = Chat.query.get_or_404(chat_id)
+                message_dict_list = current_user.get_messages(chat)
+                data = {'messages': message_dict_list,
+                        'current_username': current_user.username}
                 return jsonify(data)
             except (ValueError, OverflowError):
                 return generate_json_response(400)
@@ -117,7 +135,7 @@ def load_chats():
                                 error_out=False)
                         .items)
                 chats_dict_list = [{'chat_name': chat.get_name(current_user),
-                                    'chat_id': chat.id}
+                                    'chat_id': str(chat.id)}
                                    for chat
                                    in chats]
                 return jsonify({'chats': chats_dict_list})
@@ -183,7 +201,7 @@ def search_chats():
                                error_out=False)
                      .items)
             chats_dict_list = [{'chat_name': chat.get_name(current_user),
-                                'chat_id': chat.id}
+                                'chat_id': str(chat.id)}
                                for chat 
                                in chats]
             return jsonify({'found_chats': chats_dict_list})
@@ -242,7 +260,7 @@ def send_message():
                 return generate_json_response(400)
     message_dict = {
         'text': message.text,
-        'date_created': format_date(message.date_created),
+        'date_created': message.date_created,
         'sender_username': message.sender.username
     }
     return jsonify({'message': message_dict,

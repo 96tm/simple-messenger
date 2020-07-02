@@ -69,12 +69,12 @@ class ChatModelTestCase(unittest.TestCase):
         self.assertEqual(chat.users.count(), 0)
 
     def test_get_chat(self):
-        self.assertEqual(Chat.get_chat(self.bob, self.arthur),
+        self.assertEqual(Chat.get_chat([self.bob, self.arthur]),
                          self.chat_bob_arthur)
-        self.assertEqual(Chat.get_chat(self.clair, self.bob),
+        self.assertEqual(Chat.get_chat([self.clair, self.bob]),
                          self.chat_bob_clair)
-        self.assertEqual(Chat.get_chat(self.arthur, 
-                         self.morgana), self.chat_morgana_arthur)
+        self.assertEqual(Chat.get_chat([self.arthur, self.morgana]),
+                         self.chat_morgana_arthur)
 
     def test_mark_chats_as_removed(self):
         Chat.mark_chats_as_removed(self.bob, [self.chat_bob_arthur])

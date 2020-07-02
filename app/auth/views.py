@@ -3,17 +3,18 @@ from .. import database
 from .forms import LoginForm, RegistrationForm
 from ..email import send_email
 from ..models import User
-from datetime import datetime, timezone
-from flask import render_template, flash, redirect, request, url_for, session
+from flask import render_template, flash, redirect, request, url_for
 from flask_login import login_user, logout_user, login_required, current_user
 
 
 @auth.before_app_request
 def before_request():
     if (current_user.is_authenticated
-            and not current_user.confirmed
-            and not request.endpoint.startswith('auth.')):
-        return redirect(url_for('auth.unconfirmed'))
+        and not current_user.confirmed
+        and request.endpoint
+        and request.blueprint != 'auth'
+        and request.blueprint != 'static'):
+            return redirect(url_for('auth.unconfirmed'))
 
 
 @auth.route('/')
@@ -53,8 +54,8 @@ def signup():
     form = RegistrationForm()
 
     if form.validate_on_submit():
-        username = form.data['username']
-        email = form.data['email']
+        username = form.username.data
+        email = form.email.data.lower()
         if User.query.filter_by(email=email).first():
             flash('The email is already registered')
             return render_template('auth/registration.html', form=form)
@@ -64,18 +65,18 @@ def signup():
         user = User()
         user.username = username
         user.email = email
-        user.password = form.data['password']
+        user.password = form.password.data
         database.session.add(user)
         database.session.commit()
         token = user.generate_confirmation_token()
         send_email(user.email, 
-                  'Registration confirmation',
-                  'mail/registration_letter',
-                  user=user,
-                  token=token,
-                  link=url_for('auth.confirm', token=token, _externa=True))
+                   'Registration confirmation',
+                   'mail/registration_letter',
+                   user=user,
+                   token=token,
+                   link=url_for('auth.confirm', token=token, _external=True))
         flash('A confirmation letter has been sent to ' + user.email)
-        return redirect(url_for('main.index'))
+        return redirect(url_for('auth.login'))
 
     return render_template('auth/registration.html', form=form)
 
@@ -86,7 +87,8 @@ def confirm(token):
     if current_user.confirmed:
         return redirect(url_for('main.index'))
     if current_user.confirm(token):
-        flash('Your account has been confirmed')
+        database.session.commit()
+        flash('Your account has been confirmed.')
     else:
         flash('The confirmation link is invalid or has expired. Please sign up again.')
     return redirect(url_for('main.index'))

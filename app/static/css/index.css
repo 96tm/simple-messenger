@@ -1,131 +1,142 @@
-  li.selected-element {
-    font-weight: bold;
-  }
+/* li.chat-item::after{
+  content: '';
+  display: inline-block;
+  height: .7em;
+  width: .7em;
+  background-image: url('../img/new_mail.png');
+  background-size:contain;
+  background-repeat:no-repeat;
+  background-position: bottom; 
+} */
 
-  .center-from-left {
-    margin-left: auto;
-  }
+li.selected-element {
+  font-weight: bold;
+}
 
-  .center-from-right {
-    margin-right: auto;
-  }
+.center-from-left {
+  margin-left: auto;
+}
+
+.center-from-right {
+  margin-right: auto;
+}
 
 
-  li.selected-current-chat{
-    font-weight: bold;
-  }
+li.selected-current-chat{
+  font-weight: bold;
+}
 
-  .hidden-element{
-    display: none;
-  }
+.hidden-element{
+  display: none;
+}
 
-  .message{
-    border: 1px solid #ced4da;
-    border-radius: .25rem;
-    padding: .375rem .75rem;
-  }
+.message{
+  border: 1px solid #ced4da;
+  border-radius: .25rem;
+  padding: .375rem .75rem;
+}
 
-  .card.mb-5.mb-lg-0{
-    height: 100%;
-  }
+.card.mb-5.mb-lg-0{
+  height: 100%;
+}
 
-  .message-field-window{
-    padding-bottom: .5em;
-  }
+.message-field-window{
+  padding-bottom: .5em;
+}
 
-  button#remove-selected-chat-id,
-  button#add-contacts-id{
-    margin-top: 3.4em;
-  }
+button#remove-selected-chat-id,
+button#add-contacts-id{
+  margin-top: 3.4em;
+}
 
-  input[type=search]::placeholder {
-    font-size: medium;
-  }
+input[type=search]::placeholder {
+  font-size: medium;
+}
 
-  .message-area{
-    overflow-y: scroll;
-    height: 12em;
-    border: 1px solid #ced4da;
-    border-radius: .25rem;
-    transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;
-    padding: .375rem .75rem;
-  }
+.message-area{
+  overflow-y: scroll;
+  height: 12em;
+  border: 1px solid #ced4da;
+  border-radius: .25rem;
+  transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+  padding: .375rem .75rem;
+}
 
-  textarea{
-    resize: none;
-    width: 100%;
-    background-color: #fff;
-    padding: .375rem .75rem;
-    font-size: 1rem;
-    font-weight: 400;
-    line-height: 1.5;
-    border-radius: .25rem;
-    border: 1px solid #ced4da;
-    transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;
-  }
+textarea{
+  resize: none;
+  width: 100%;
+  background-color: #fff;
+  padding: .375rem .75rem;
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.5;
+  border-radius: .25rem;
+  border: 1px solid #ced4da;
+  transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+}
 
-  #user-list-id,
-  #chat-list-id {
-    padding-left: 0;
-    overflow-y: scroll;
-    height: 12em;
-  }
+#user-list-id,
+#chat-list-id {
+  padding-left: 0;
+  overflow-y: scroll;
+  height: 12em;
+}
 
-  li.chat-item,
-  li.user-item{
-    cursor: pointer;
-    list-style: none;
-  }
+li.chat-item,
+li.user-item{
+  cursor: pointer;
+  list-style: none;
+}
 
-  li.chat-item:hover,
-  li.user-item:hover{
-    font-weight: bold;
-  }
+li.chat-item:hover,
+li.user-item:hover{
+  font-weight: bold;
+}
 
-  .row .card {
-    border: none;
-    border-radius: 1rem;
-    transition: all 0.2s;
-    box-shadow: 0 0.5rem 1rem 0 rgba(0, 0, 0, 0.1);
-  }
-  
-  .row hr {
-    margin: 1.5rem 0;
-  }
-  
-  .row .card-title {
-    margin: 0.5rem 0;
-    font-size: 0.9rem;
-    letter-spacing: .1rem;
-    font-weight: bold;
-  }
-  
-  .row ul li {
-    margin-bottom: 1rem;
-  }
-  
-  .row .text-muted {
-    opacity: 0.7;
-  }
-  
-  /* Hover Effects on Card */
-  
-  @media (min-width: 992px) {
-    .row .card:hover {
-      margin-top: -.25rem;
-      margin-bottom: .25rem;
-      box-shadow: 0 0.5rem 1rem 0 rgba(0, 0, 0, 0.3);
-    }
-    .row .card:hover .btn {
-      opacity: 1;
-    }
-  }
+.row .card {
+  border: none;
+  border-radius: 1rem;
+  transition: all 0.2s;
+  box-shadow: 0 0.5rem 1rem 0 rgba(0, 0, 0, 0.1);
+}
 
-  .btn {
-    font-size: 75%;
-    border-radius: 5rem;
-    letter-spacing: .1rem;
-    font-weight: bold;
-    padding: .5rem;
-    transition: all 0.2s;
+.row hr {
+  margin: 1.5rem 0;
+}
+
+.row .card-title {
+  margin: 0.5rem 0;
+  font-size: 0.9rem;
+  letter-spacing: .1rem;
+  font-weight: bold;
+}
+
+.row ul li {
+  margin-bottom: 1rem;
+}
+
+.row .text-muted {
+  opacity: 0.7;
+}
+
+/* Hover Effects on Card */
+
+@media (min-width: 992px) {
+  .row .card:hover {
+    margin-top: -.25rem;
+    margin-bottom: .25rem;
+    box-shadow: 0 0.5rem 1rem 0 rgba(0, 0, 0, 0.3);
   }
+  .row .card:hover .btn {
+    opacity: 1;
+  }
+}
+
+.btn {
+  font-size: 75%;
+  border-radius: 5rem;
+  letter-spacing: .1rem;
+  font-weight: bold;
+  padding: .5rem;
+  transition: all 0.2s;
+}

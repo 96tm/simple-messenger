@@ -1,6 +1,7 @@
 "use strict";
 
 // server sends numbers as strings on ajax requests
+// assume moment.js is loaded
 
 // constants
 const POLLING_TIMEOUT = 3000;
@@ -35,6 +36,12 @@ const JSON_CONTENT_TYPE = "application/json";
 
 
 // utility functions
+
+
+function format_date(date) {
+  const format_string = "MMMM Do YYYY, h:mm:ss a";
+  return moment(date).format(format_string);
+}
 
 
 function createAlert(text) {
@@ -655,7 +662,7 @@ class MessageWindow {
 
   addMessage(currentUsername, message) {
     const text = message["text"];
-    const dateCreated = message["date_created"];
+    const dateCreated = format_date(message["date_created"]);
     let sender_username = message["sender_username"];
     let username;
     if (sender_username === currentUsername) {
@@ -696,6 +703,36 @@ class MessageWindow {
     }
   };
 
+  loadMessagesAjax(currentChatId) {
+    let request = new XMLHttpRequest();
+    request.open("POST", "/load_messages", true);
+    request.setRequestHeader("Content-Type", JSON_CONTENT_TYPE);
+
+    request.onload = (function() {
+      try {
+          if (request.readyState === request.DONE) {
+            if (request.status === 200) {
+              const response = JSON.parse(request.response);
+              const messages = response["messages"];
+              const currentUsername = response["current_username"];
+              this.addMessages(currentUsername,
+                               messages);
+            } else {
+              logFailedAjaxRequest(request);
+            }
+          }
+        }
+        catch(e) {
+          logException(e);
+        }
+    }).bind(this);
+
+    const data = {
+                   chat_id: currentChatId
+                 };
+    request.send(JSON.stringify(data));
+  }
+
   checkNewMessagesAjax(currentChatId) {
     let request = new XMLHttpRequest();
     request.open("POST", "/check_new_messages", true);
@@ -725,7 +762,6 @@ class MessageWindow {
                  };
     request.send(JSON.stringify(data));
   };
-
 
   sendMessageAjax(chatId, messageText){
     const text = messageText.trim();
@@ -842,8 +878,11 @@ window
     catch(e) {
       console.log('No chat selected');
     }
-    if (chatWindow.selectedChatId) {
-      chatWindow.showRemoveChatButton();
-      messageWindow.startMessagePolling();
+    if (chatWindow.selectedChatId 
+        && chatWindow.chats.has(chatWindow.selectedChatId)) {
+        
+            chatWindow.showRemoveChatButton();
+            messageWindow.loadMessagesAjax(chatWindow.selectedChatId);
+            messageWindow.startMessagePolling();
     }
 });

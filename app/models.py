@@ -1,13 +1,14 @@
 from . import login_manager
 from . import database
+from .exceptions import ValidationError
 from datetime import datetime, timezone
 from itsdangerous import BadHeader, SignatureExpired
 from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.ext.hybrid import hybrid_method
-from sqlalchemy import and_, not_, or_
-from flask import current_app
+from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy import and_, not_, or_, select
+from flask import current_app, url_for
 from flask_login import UserMixin, AnonymousUserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -15,14 +16,14 @@ from werkzeug.security import generate_password_hash, check_password_hash
 @login_manager.user_loader
 def load_user(user_id):
     """
-    Set up current user
+    Set up current user.
     """
     return User.query.get(int(user_id))
 
 
 def format_date(date):
     """
-    Return string representation of given date
+    Return string representation of given date.
 
     :param date: DateTime instance
     :returns: string
@@ -99,6 +100,7 @@ class Role(database.Model):
     Represents user role for managing
     permission.
 
+
     Static methods defined here:
 
     insert_roles(roles=None)
@@ -164,8 +166,20 @@ class Contact(database.Model):
                                  primary_key=True)
     contact_group = database.Column(database.String(16), nullable=True)
 
-    date_created = database.Column(database.DateTime,
-                                   default=datetime.now(tz=timezone.utc))
+    _date_created = database.Column(database.DateTime(timezone=True),
+                                    default=datetime.now(tz=timezone.utc))
+
+    @hybrid_property
+    def date_created(self):
+        return self._date_created.astimezone(timezone.utc)
+    
+    @date_created.expression
+    def date_created(self):
+        return self._date_created
+    
+    @date_created.setter
+    def date_created(self, value):
+        self._data_created = value
 
 
 class Chat(database.Model):
@@ -177,7 +191,9 @@ class Chat(database.Model):
 
     Methods defined here:
 
-    get_name()
+    to_json(user)
+
+    get_name(user)
 
     add_users(users)
 
@@ -187,6 +203,8 @@ class Chat(database.Model):
 
 
     Static methods defined here:
+
+    from_json(json_object)
 
     search_chats_query(chat_name, user)
 
@@ -202,26 +220,66 @@ class Chat(database.Model):
     get_removed_chats(user, user_ids)
     """
     __tablename__ = 'chats'
-
     id = database.Column(database.Integer, primary_key=True)
     name = database.Column(database.String(64))
     is_group_chat = database.Column(database.Boolean, default=False)
-    date_created = database.Column(database.DateTime, 
-                                   default=datetime.now(tz=timezone.utc))
-    date_modified = database.Column(database.DateTime,
+    _date_created = database.Column(database.DateTime(timezone=True), 
                                     default=datetime.now(tz=timezone.utc))
-    
+    _date_modified = database.Column(database.DateTime(timezone=True),
+                                     onupdate=datetime.now(tz=timezone.utc))
     removed_users = database.relationship('RemovedChat',
                                           backref='chat',
                                           lazy='dynamic',
                                           cascade='all, delete-orphan')
+    
+    @hybrid_property
+    def date_created(self):
+        return self._date_created.astimezone(timezone.utc)
+    
+    @date_created.expression
+    def date_created(self):
+        return self._date_created
+    
+    @date_created.setter
+    def date_created(self, value):
+        self._date_created = value
+
+    @hybrid_property
+    def date_modified(self):
+        return self._date_modified.astimezone(timezone.utc)
+    
+    @date_modified.expression
+    def date_modified(self):
+        return self._date_modified
+    
+    @date_modified.setter
+    def date_modified(self, value):
+        self._date_modified = value
+    
+    def to_json(self, user):
+        """
+        Return JSON representation
+        of current chat.
+
+        :param user: current user (needed to get chat name)
+        :returns: Chat model instance turned to dictionary
+        """
+        chat = {'chat_name': self.get_name(user),
+                'is_group_chat': self.is_group_chat,
+                'date_created': self.date_created,
+                'date_modified': self.date_modified,
+                'messages': url_for('api.get_messages', 
+                                    chat_id=self.id,
+                                    _external=True)
+               }
+        return chat
 
     def get_name(self, user):
         """
         Return current chat's 'name' if present,
         otherwise return 'username'
-        of first user of current chat's users attribute
-        which is not equal to given user's username
+        of first user of current chat's 'users' attribute
+        which is not equal to given user's username.
 
         :param user: User model instance
         :returns: string
@@ -254,6 +312,21 @@ class Chat(database.Model):
         for user in users:
             self.users.remove(user)
         database.session.commit()
+    
+    @staticmethod
+    def from_json(json_chat, current_user):
+        chat = Chat()
+        chat_name = json_chat.get('chat_name')
+        usernames = json_chat.get('users')
+        users = User.query.filter(User.username.in_(usernames)).all()
+        if len(users) > 1:
+            chat.is_group_chat = True
+            if not chat_name:
+                raise ValidationError('Chat name or recipient name\
+                                       must be present.')
+        chat.add_users(users)
+        chat.add_users([current_user])
+        return chat
     
     @staticmethod
     def search_chats_query(chat_name, user):
@@ -319,20 +392,17 @@ class Chat(database.Model):
                 .union(chats))
     
     @staticmethod
-    def get_chat(user_1, user_2):
+    def get_chat(users):
         """
-        Return chat between user_1 and user_2
+        Return chat of users in given sequence.
 
-        :param user_1: User model instance
-        :param user_2: User model instance
+        :param user: sequence of User model instances
         :returns: Chat model instance
         """
-        return (Chat
-                .query
-                .filter(and_(Chat.users.contains(user_1),
-                             Chat.users.contains(user_2),
-                             not_(Chat.is_group_chat)))
-                .first())
+        chat = Chat.query
+        for user in users:
+            chat = chat.filter(Chat.users.contains(user))
+        return chat.first()
 
     @staticmethod
     def get_removed_query(user, chat_query=None):
@@ -367,7 +437,7 @@ class Chat(database.Model):
         """
         Return query of chats 
         of given user with users 
-        identified by given user_ids
+        identified by given user_ids.
         
         :param user: User model instance
         :param user_ids: sequence of integers
@@ -434,11 +504,14 @@ class User(UserMixin, database.Model):
     User model. Implements UserMixin, 
     used as a default authentication model by Flask-Login.
 
+
     Methods defined here:
 
     has_permission(permission)
 
     verify_password(password)
+
+    generate_auth_token(expiration=3600)
     
     generate_confirmation_token(expiration=3600)
     
@@ -461,15 +534,22 @@ class User(UserMixin, database.Model):
     get_unread_messages(chat)
     
     search_users_query(username, users_query)
+
+
+    Static methods defined here:
+
+    verify_auth_token(token)
     """
     __tablename__ = 'users'
     id = database.Column(database.Integer, primary_key=True)
     confirmed = database.Column(database.Boolean, default=False)
-    last_seen = database.Column(database.DateTime, nullable=True)
+    last_seen = database.Column(database.DateTime(timezone=True), 
+                                nullable=True)
     role_id = database.Column(database.Integer, 
                               database.ForeignKey('roles.id'))
-    date_created = database.Column(database.DateTime, nullable=False,
-                                   default=datetime.now(timezone.utc))
+    _date_created = database.Column(database.DateTime(timezone=True), 
+                                    nullable=False,
+                                    default=datetime.now(tz=timezone.utc))
     username = database.Column(database.String(64), 
                                unique=True,
                                index=True,
@@ -520,6 +600,18 @@ class User(UserMixin, database.Model):
         return (f'User(id={self.id}, username={self.username}, '
                 + f'date_created={self.date_created}, '
                 + f'confirmed={self.confirmed})')
+
+    @hybrid_property
+    def date_created(self):
+        return self._date_created.astimezone(timezone.utc)
+    
+    @date_created.expression
+    def date_created(self):
+        return self._date_created
+    
+    @date_created.setter
+    def date_created(self, value):
+        self._date_created = value
     
     @property
     def is_admin(self):
@@ -546,7 +638,7 @@ class User(UserMixin, database.Model):
     
     def has_permission(self, permission):
         """
-        Check if current user has given permission
+        Check if current user has given permission.
 
         :param permission: integer representing permission
         :returns: True if current user has a role
@@ -568,9 +660,19 @@ class User(UserMixin, database.Model):
         """
         return check_password_hash(self.password_hash, password)
     
+    def generate_auth_token(self, expiration=3600):
+        """
+        Return authentication token for current user.
+
+        :param expiration: Time in seconds after which token expires
+        :returns: TimedJSONWebSignature
+        """
+        serializer = Serializer(current_app.config['SECRET_KEY'], expiration)
+        return serializer.dumps({'id': self.id})
+    
     def generate_confirmation_token(self, expiration=3600):
         """
-        Return a confirmation token for current user.
+        Return confirmation token for current user.
 
         :param expiration: Time in seconds after which token expires
         :returns: TimedJSONWebSignature
@@ -611,7 +713,7 @@ class User(UserMixin, database.Model):
     
     def is_contacted_by(self, user):
         """
-        Check if given user has current user as a contact
+        Check if given user has current user as a contact.
 
         :param user: User model instance
         :returns: True if user has current user as a contact,
@@ -687,9 +789,7 @@ class User(UserMixin, database.Model):
                            .messages
                            .filter(and_(Message.sender != self,
                                         not_(Message.was_read))))
-
         messages = chat.messages.order_by(Message.date_created).all()
-
         message_dict_list = []
         for message in messages:
             sender = message.sender
@@ -697,7 +797,7 @@ class User(UserMixin, database.Model):
             sender_name = sender.username if sender else None
             recipient_name = recipient.username if recipient else None
             message_dict = {'text': message.text,
-                            'date_created': format_date(message.date_created),
+                            'date_created': message.date_created,
                             'sender_username': sender_name,
                             'recipient_username': recipient_name}
             message_dict_list.append(message_dict)
@@ -722,7 +822,7 @@ class User(UserMixin, database.Model):
         for message in messages:
             sender = message.sender
             sender_username = sender.username if sender else None
-            date_created = format_date(message.date_created)
+            date_created = message.date_created
             message_dict = {'text': message.text,
                             'sender_username': sender_username,
                             'date_created': date_created}
@@ -744,25 +844,53 @@ class User(UserMixin, database.Model):
         query = (users_query
                  .filter(User.username.like('%' + username + '%')))
         return query
+    
+    @staticmethod
+    def verify_auth_token(token):
+        """
+        Check the valididty of given token.
+
+        :param token: TimedJSONWebSignature
+        :returns: True if token is valid, 
+                  False otherwise
+        """
+        print('user verify function')
+        serializer = Serializer(current_app.config['SECRET_KEY'])
+        try:
+            print('hey')
+            data = serializer.loads(token)
+            print('data', data)
+        except Exception as exception:
+            print(exception)
+            return None
+        print(data)
+        return User.query.get(data['id'])
 
 
 class Message(database.Model):
     """
     Message model.
 
+
+    Methods defined here:
+
+    to_json(user)
+
+
     Static methods defined here:
+
+    from_json(json_message)
 
     flush_messages(message_query)
     """
     __tablename__ = 'messages'
-
     id = database.Column(database.Integer, primary_key = True)
     was_read = database.Column(database.Boolean,
                                default=False)
     text = database.Column(database.Text)
-    date_created = database.Column(database.DateTime,
-                                   nullable=False,
-                                   default=datetime.now(timezone.utc))
+    _date_created = database.Column(database.DateTime(timezone=True),
+                                     nullable=False,
+                                     default=datetime.now(timezone.utc))
     sender_id = database.Column(database.Integer, 
                                 database.ForeignKey('users.id'),
                                 nullable=False)
@@ -790,6 +918,64 @@ class Message(database.Model):
                 + f'date_created={self.date_created})'
                )
     
+    @hybrid_property
+    def date_created(self):
+        return self._date_created.astimezone(timezone.utc)
+
+    @date_created.expression
+    def date_created(self):
+        return self._date_created
+
+    @date_created.setter
+    def date_created(self, value):
+        self._date_created = value
+
+    def to_json(self, user):
+        """
+        Return dictionary representation
+        of current message.
+
+        :param user: current user (needed to get chat name)
+        :returns: Message model instance turned to dictionary
+        """
+        if not self.recipient:
+            recipient_username = ''
+        else:
+            recipient_username = self.recipient.username
+    
+        message = {'id': self.id,
+                   'chat_id': self.chat_id,
+                   'was_read': self.was_read,
+                   'date_created': self.date_created,
+                   'text': self.text,
+                   'sender_username': self.sender.username,
+                   'recipient_username': recipient_username,
+                   'chat_name': self.chat.get_name(user)}
+        return message
+    
+    @staticmethod
+    def from_json(json_message):
+        """
+        Return Message model instance
+        created from dictionary.
+
+        :param json_message: dictionary
+        :returns: Message model instance
+        """
+        text = json_message.get('text')
+        recipient_username = json_message.get('recipient_username')
+        if recipient_username:
+            recipient = (User
+                         .query
+                         .filter_by(username=recipient_username)
+                         .first())
+        else:
+            raise ValidationError('Group chats not implemented yet.') # TODO
+        message = Message()
+        message.text = text
+        message.recipient = recipient
+        return message
+
     @staticmethod  
     def flush_messages(message_query):
         """

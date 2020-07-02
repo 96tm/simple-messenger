@@ -41,11 +41,9 @@ def index():
         chat = Chat.query.get_or_404(current_chat_id)
         messages = current.get_messages(chat)
         current_chat_name = chat.get_name(current)
-
     return render_template('index.html',
                            chats = chat_list,
                            users = users,
-                           messages = messages,
                            current_chat_id=current_chat_id,
                            current_chat_name=current_chat_name,
                            message_form = MessageForm(),
