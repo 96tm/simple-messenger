@@ -10,7 +10,11 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy import and_, not_, or_, select
 from flask import current_app, url_for
 from flask_login import UserMixin, AnonymousUserMixin
+from functools import partial
 from werkzeug.security import generate_password_hash, check_password_hash
+
+
+utc_now = partial(datetime.now, tz=timezone.utc)
 
 
 @login_manager.user_loader
@@ -167,7 +171,7 @@ class Contact(database.Model):
     contact_group = database.Column(database.String(16), nullable=True)
 
     _date_created = database.Column(database.DateTime(timezone=True),
-                                    default=datetime.now(tz=timezone.utc))
+                                    default=utc_now)
 
     @hybrid_property
     def date_created(self):
@@ -199,7 +203,7 @@ class Chat(database.Model):
 
     delete_users(users)
 
-    get_chat(user_1, user_2)
+    get_chat(users)
 
 
     Static methods defined here:
@@ -224,9 +228,10 @@ class Chat(database.Model):
     name = database.Column(database.String(64))
     is_group_chat = database.Column(database.Boolean, default=False)
     _date_created = database.Column(database.DateTime(timezone=True), 
-                                    default=datetime.now(tz=timezone.utc))
+                                    default=utc_now)
     _date_modified = database.Column(database.DateTime(timezone=True),
-                                     onupdate=datetime.now(tz=timezone.utc))
+                                     default=utc_now,
+                                     onupdate=utc_now)
     removed_users = database.relationship('RemovedChat',
                                           backref='chat',
                                           lazy='dynamic',
@@ -315,6 +320,14 @@ class Chat(database.Model):
     
     @staticmethod
     def from_json(json_chat, current_user):
+        """
+        Return Chat model instance
+        created from dictionary.
+
+        :param json_chat: dictionary
+        :param current_user: current user (needed to get chat name)
+        :returns: Message model instance
+        """
         chat = Chat()
         chat_name = json_chat.get('chat_name')
         usernames = json_chat.get('users')
@@ -549,7 +562,7 @@ class User(UserMixin, database.Model):
                               database.ForeignKey('roles.id'))
     _date_created = database.Column(database.DateTime(timezone=True), 
                                     nullable=False,
-                                    default=datetime.now(tz=timezone.utc))
+                                    default=utc_now)
     username = database.Column(database.String(64), 
                                unique=True,
                                index=True,
@@ -890,7 +903,7 @@ class Message(database.Model):
     text = database.Column(database.Text)
     _date_created = database.Column(database.DateTime(timezone=True),
                                      nullable=False,
-                                     default=datetime.now(timezone.utc))
+                                     default=utc_now)
     sender_id = database.Column(database.Integer, 
                                 database.ForeignKey('users.id'),
                                 nullable=False)
@@ -970,7 +983,7 @@ class Message(database.Model):
                          .filter_by(username=recipient_username)
                          .first())
         else:
-            raise ValidationError('Group chats not implemented yet.') # TODO
+            raise ValidationError('Group chats are not implemented yet.') # TODO
         message = Message()
         message.text = text
         message.recipient = recipient

@@ -1,13 +1,10 @@
-from datetime import datetime, timezone
-import time
-
 from app import create_app, database
 from app.models import User, Role, Permission, Contact, Message, Chat
 from app.main.views import check_new_messages
 from app.auth.forms import LoginForm
 from flask import current_app, json, jsonify
 import unittest
-
+        
 
 class ClientTestCase(unittest.TestCase):
     def setUp(self):
@@ -17,9 +14,22 @@ class ClientTestCase(unittest.TestCase):
         database.create_all()
         Role.insert_roles()
         self.client = self.app.test_client(use_cookies=True)
+
+        self.bob = User(username='bob', password='bob', email='bob@bob.bob', confirmed=True)
+        self.arthur = User(username='arthur', password='arthur', email='arthur@arthur.arthur', confirmed=True)
+        self.clair = User(username='clair', password='clair', email='clair@clair.clair', confirmed=True)
+        self.chat_bob_arthur = Chat()
+        self.chat_bob_arthur.add_users([self.bob, self.arthur])
+        database.session.add_all([self.bob, self.arthur, self.clair, self.chat_bob_arthur])
+        database.session.commit()
     
     def test_index(self):
-        pass
+        response = self.client.post('/auth/login', data={
+            'email': 'bob@bob.bob',
+            'password': 'bob'
+        }, follow_redirects=True)
+        self.assertIn(f'<li id="user-{self.arthur.id}" class="user-item">',
+                      response.get_data(as_text=True))
 
     def test_register_and_login(self):
         response = self.client.post('/auth/signup', data={
@@ -60,19 +70,21 @@ class ClientTestCase(unittest.TestCase):
 
     
     def test_check_new_messages(self):
-        bob = User(username='bob', password='bob', email='bob@bob.bob', confirmed=True)
-        arthur = User(username='arthur', password='arthur', email='arthur@arthur.arthur', confirmed=True)
-        database.session.add_all([bob, arthur])
-        database.session.commit()
-        chat = Chat()
-        chat.add_users([bob, arthur])
-        message1 = Message(text='hi there1', sender=arthur, recipient=bob, was_read=True, chat=chat)
-        message2 = Message(text='hi there2', sender=arthur, recipient=bob, was_read=True, chat=chat)
-        message3 = Message(text='hi there3', sender=arthur, recipient=bob, chat=chat)
-        message4 = Message(text='hi there4', sender=arthur, recipient=bob, chat=chat)
+        message1 = Message(text='hi there1', sender=self.arthur,
+                           recipient=self.bob, 
+                           was_read=True, chat=self.chat_bob_arthur)
+        message2 = Message(text='hi there2', sender=self.arthur,
+                           recipient=self.bob,
+                           was_read=True, chat=self.chat_bob_arthur)
+        message3 = Message(text='hi there3', sender=self.arthur,
+                           recipient=self.bob, chat=self.chat_bob_arthur)
+        message4 = Message(text='hi there4', sender=self.arthur,
+                           recipient=self.bob, chat=self.chat_bob_arthur)
         database.session.add_all([message1, message2, message3, message4])
         database.session.commit()
-        data = {'email': bob.email, 'remember_me': True, 'password': 'bob'}
+        data = {'email': self.bob.email, 
+                'remember_me': True, 
+                'password': 'bob'}
         self.client.post('/auth/login', data=data)
         self.assertFalse(message3.was_read)
         self.assertFalse(message4.was_read)
@@ -80,10 +92,18 @@ class ClientTestCase(unittest.TestCase):
                                     content_type='application/json',
                                     headers=[('X-Requested-With',
                                               'XMLHttpRequest')],
-                                    json={'chat_id': chat.id},
+                                    json={'chat_id': self.chat_bob_arthur.id},
                                     follow_redirects=True)
         self.assertTrue(message3.was_read)
         self.assertTrue(message4.was_read)
+    
+    def test_add_chat(self):
+        response = self.client.post('/auth/login', data={
+            'email': 'bob@bob.bob',
+            'password': 'bob'
+        }, follow_redirects=True)
+        self.assertIn(f'<li id="user-{self.arthur.id}" class="user-item">',
+                      response.get_data(as_text=True))
 
     def tearDown(self):
         database.session.remove()

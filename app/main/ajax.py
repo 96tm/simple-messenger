@@ -251,9 +251,9 @@ def send_message():
                                 .filter(User.id != current_user.id)
                                 .first())
                 message = Message(text=text,
-                                sender=current_user,
-                                recipient=recipient,
-                                chat=chat)
+                                  sender=current_user,
+                                  recipient=recipient,
+                                  chat=chat)
                 database.session.add(message)
                 database.session.commit()
             except (ValueError, OverflowError):

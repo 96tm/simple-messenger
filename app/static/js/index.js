@@ -1,7 +1,9 @@
 "use strict";
 
+
 // server sends numbers as strings on ajax requests
 // assume moment.js is loaded
+
 
 // constants
 const POLLING_TIMEOUT = 3000;
@@ -36,8 +38,6 @@ const JSON_CONTENT_TYPE = "application/json";
 
 
 // utility functions
-
-
 function format_date(date) {
   const format_string = "MMMM Do YYYY, h:mm:ss a";
   return moment(date).format(format_string);
@@ -74,8 +74,6 @@ function logException(exception) {
 
 
 // classes
-
-
 class UserWindow {
   constructor(userWindowId, userListId, addContactButtonId, userSearchId) {
     this.USER_PREFIX = "user-";
@@ -105,7 +103,10 @@ class UserWindow {
     }).bind(this));
 
     this.userList.addEventListener("scroll", (function() {
-      if (this.userList.scrollTop === this.userList.scrollTopMax) { 
+      const scroll = this.userList.scrollHeight 
+                     - this.userList.scrollTop
+                     - this.userList.clientHeight;
+      if (-1 < scroll && scroll < 1) { 
         if (this.userSearchInput.value && this.userSearchInput.value.length > 2) {
           this.searchUsersAjax(this.userSearchInput.value,
                                this.getPageNumber())
@@ -341,10 +342,13 @@ class ChatWindow {
     }).bind(this));
 
     this.chatList.addEventListener("scroll", (function() {
-      if (this.chatList.scrollTop === this.chatList.scrollTopMax) { 
+      const scroll = this.chatList.scrollHeight 
+                     - this.chatList.scrollTop
+                     - this.chatList.clientHeight;
+      if (-1 < scroll && scroll < 1) { 
         if (this.chatSearchInput.value && this.chatSearchInput.value.length > 2) {
-          this.searchChatsAjax(this.chatSearchInput.value,
-                               this.getPageNumber())
+              this.searchChatsAjax(this.chatSearchInput.value,
+                                   this.getPageNumber())
         }
         else {
           this.loadChatsAjax(this.getPageNumber());
@@ -777,7 +781,6 @@ class MessageWindow {
 
                     const response = JSON.parse(request.response);
                     const message = response["message"];
-                    const chatName = response["chat_name"];
                     const currentUsername = response["current_username"];
                     this.messageField.value = "";
                     this.addMessage(currentUsername, message);
@@ -808,7 +811,7 @@ class MessageWindow {
   };
 
   scrollDown() {
-    this.messageArea.scrollTo(0, this.messageArea.scrollTopMax);
+    this.messageArea.scrollTo(0, this.messageArea.scrollHeight);
   };
 
   show() {

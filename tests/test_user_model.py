@@ -51,7 +51,7 @@ class UserModelTestCase(unittest.TestCase):
         database.drop_all()
         self.app_context.pop()
 
-    def t1est_expired_confirmation_token(self):
+    def test_expired_confirmation_token(self):
         user = User(password='pass', email='user@user.user', username='user')
         database.session.add(user)
         database.session.commit()

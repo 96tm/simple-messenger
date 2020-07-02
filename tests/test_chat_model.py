@@ -1,7 +1,8 @@
 from app import create_app, database
 from app.models import Chat, RemovedChat, User, Role
-from flask import current_app
+from flask import current_app, url_for
 import unittest
+from app.exceptions import ValidationError
 
 
 class ChatModelTestCase(unittest.TestCase):
@@ -151,3 +152,29 @@ class ChatModelTestCase(unittest.TestCase):
         self.assertIn(self.chat_bob_artorias, chats)
         self.assertEqual(len(chats), 2)
 
+    def test_from_json(self):
+        json_chat = {'chat_name': None,
+                     'users': ['morgana']}
+        chat = Chat.from_json(json_chat, self.clair)
+        self.assertEqual(chat.name, None)
+        self.assertEqual(chat.get_name(self.clair), self.morgana.username)
+        self.assertEqual(chat.get_name(self.morgana), self.clair.username)
+        self.assertIn(self.clair, chat.users.all())
+        self.assertIn(self.morgana, chat.users.all())
+        json_chat = {'chat_name': None,
+                     'users': ['morgana', 'bob']}
+        with self.assertRaises(ValidationError):
+            Chat.from_json(json_chat, self.clair)
+
+    def test_to_json(self):
+        chat = self.chat_bob_arthur
+        json_chat = chat.to_json(self.bob)
+        self.assertEqual(json_chat,
+                         {'chat_name': self.arthur.username,
+                          'is_group_chat': chat.is_group_chat,
+                          'date_created': chat.date_created,
+                          'date_modified': chat.date_modified,
+                          'messages': url_for('api.get_messages', 
+                                      chat_id=chat.id,
+                                      _external=True)
+                         })
