@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}
+  SimpleMessenger {% if current_user.username %}- {{current_user.username}} {% endif %}
+{% endblock %}
+
+{% block styles %}
+{{ super() }}
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
+{% endblock %}
+
+{% block page_content %}
+{% if current_user.is_authenticated %}
+<div class="container">
+    <div class="row">
+      <!-- User search-->
+      <div id="user-window-id" class="col-lg-3 {% if not current_chat_id %}center-from-left{% endif %}">
+        <div class="card mb-5 mb-lg-0">
+          <div class="card-body">
+            <h5 class="card-title text-muted text-uppercase text-center">Find users</h5>
+              {{user_search_form.search_field()}}
+            <hr>
+            <div class="user-list">
+                <ul id="user-list-id" class="fa-ul">
+                  {% if users %}
+                    {% for user in users %}
+                    <li id="user-{{user.id}}" class="user-item">
+                      <span class="fa-li"><i class="fas"></i></span>
+                      <span>{{ user.username }}</span>
+                    </li>
+                    {% endfor %}
+                  {% else %}
+                  <li class="text-muted"><span class="fa-li"><i class="fas"></i></span>no users found</li>
+                  {% endif %}
+                </ul>
+            </div>
+            <button id="add-contacts-id" class="btn btn-block btn-primary text-uppercase hidden-element">Add contacts</button>
+          </div>
+        </div>
+      </div>
+      <!-- Chats -->
+      <div id="chat-window-id" class="col-lg-3 {% if not current_chat_id %}center-from-right{% endif %}">
+        <div class="card mb-5 mb-lg-0">
+          <div class="card-body">
+            <h5 class="card-title text-muted text-uppercase text-center">Your chats</h5>
+              {{chat_search_form.search_field()}}
+            <hr>
+            <div class="chat-list">
+              <ul id="chat-list-id" class="fa-ul">
+                {% if current_user %}
+                  {% for chat in chats %}
+                  <li id="chat-{{ chat.chat_id}}" 
+                      class="chat-item {% if current_chat_id == chat.chat_id %} selected-current-chat {% endif %}">
+                    <span class="fa-li"><i class="fas fa-times"></i></span>
+                    <span> {{chat.name}} </span>
+                  </li>
+                  {% endfor %}
+                {% else %}
+                <li class="text-muted">
+                  <span class="fa-li"><i class="fas fa-times"></i></span>
+                  no chats
+                </li>
+                {% endif %}
+              </ul>
+              <button id="remove-selected-chat-id"
+                      class="btn btn-block btn-primary 
+                             text-uppercase 
+                             hidden-element">Remove</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Message window -->
+      <div id="message-window-id"
+           class="col-lg-6
+                  {% if not current_chat_id %}
+                  hidden-element 
+                  {% endif %}">
+        <div class="card">
+          <div class="card-body">
+            <h5 id="chat-header-id"
+                class="card-title text-muted text-uppercase text-center">
+            {% if current_chat_name %} {{current_chat_name}} {% endif %}
+            </h5>
+
+              <div id="message-area-id" 
+                   class="message-area">
+              </div>
+            <hr>
+              <div class="message-field-window">
+                {{message_form.message_field()}}
+              </div>
+            <button name="send_message_button"
+                    id="send-message-button-id"
+                    class="btn btn-block btn-primary text-uppercase">Send message</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+  {{ super() }}
+  <script src="{{ url_for('static', filename='js/moment.js')}}"></script>
+  <script src="{{ url_for('static', filename='js/index.js')}}"></script>
+{% endblock %}

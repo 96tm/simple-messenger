@@ -1,0 +1,2 @@
+Hello {{user.username}}! It seems you've registered at SimpleMessenger.
+Please follow the link {{link}} and log in using your password to confirm registration.
