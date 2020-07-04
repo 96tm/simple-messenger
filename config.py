@@ -1,5 +1,10 @@
 import os
+from dotenv import load_dotenv
+
+
 basedir = os.path.abspath(os.path.dirname(__file__))
+load_dotenv(os.path.join(basedir, '.env'))
+
 
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY', 'change_debug_secret_key!')
@@ -20,6 +25,7 @@ class Config:
         pass
 
 class DevelopmentConfig(Config):
+    name = 'development'
     DEBUG = True
     MAIL_SERVER = 'smtp.mail.ru'
     MAIL_PORT = 587
@@ -34,12 +40,29 @@ class DevelopmentConfig(Config):
                                          + os.environ['FLASK_DB_HOSTNAME'] + '/'
                                          + 'simple_messenger_db')
 
+
 class TestingConfig(Config):
+    name = 'testing'
     TESTING = True
     WTF_CSRF_ENABLED = False
+    SQLALCHEMY_DATABASE_URI = 'sqlite://'
+
 
 class ProductionConfig(Config):
-    pass
+    name = 'production'
+    DEBUG = False
+    MAIL_SERVER = os.environ['MAIL_SERVER']
+    MAIL_PORT = os.environ['MAIL_PORT']
+    MAIL_USE_TLS = True
+    MAIL_USERNAME = os.environ.get('MAIL_USERNAME')
+    MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')
+    SQLALCHEMY_DATABASE_URI = ('postgresql://' 
+                               + os.environ['FLASK_DB_USER']
+                               + ':' 
+                               + os.environ['FLASK_DB_PASS']
+                               + '@'
+                               + os.environ['FLASK_DB_HOSTNAME'] + '/'
+                               + os.environ['FLASK_DB_NAME'])
 
 config = {'development': DevelopmentConfig,
           'testing':     TestingConfig,

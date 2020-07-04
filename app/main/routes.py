@@ -1,7 +1,6 @@
-from flask import current_app
-from flask import render_template, session
-from flask_login import current_user, login_required
 from datetime import datetime, timezone
+from flask import current_app, render_template, session
+from flask_login import current_user, login_required
 import json
 
 from . import main
@@ -41,7 +40,7 @@ def index():
         chat = Chat.query.get_or_404(current_chat_id)
         messages = current.get_messages(chat)
         current_chat_name = chat.get_name(current)
-    return render_template('index.html',
+    return render_template('main/index.html',
                            chats = chat_list,
                            users = users,
                            current_chat_id=current_chat_id,

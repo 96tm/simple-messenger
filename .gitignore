@@ -1,6 +1,8 @@
 # other
 .vscode
 venv
+certificates
+boot.sh
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

@@ -1,6 +1,6 @@
 from app import create_app, database
 from app.models import User, Role, Permission, Contact, Message, Chat
-from app.main.views import check_new_messages
+from app.main.routes import check_new_messages
 from app.auth.forms import LoginForm
 from flask import current_app, json, jsonify
 import unittest

@@ -10,4 +10,5 @@ def inject_permissions():
     return {'Permission': Permission}
 
 
-from . import views, errors
+from . import routes
+# from app.errors import handlers 

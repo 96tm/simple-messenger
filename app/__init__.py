@@ -4,14 +4,16 @@ from flask_login import LoginManager
 from flask_mail import Mail
 from flask_sqlalchemy import SQLAlchemy
 from flask_moment import Moment
-from config import config
+from flask_migrate import Migrate
 
+from config import config
 
 database = SQLAlchemy()
 login_manager = LoginManager()
 mail = Mail()
 moment = Moment()
 bootstrap = Bootstrap()
+migrate = Migrate()
 
 
 def create_app(config_name):
@@ -24,9 +26,7 @@ def create_app(config_name):
     login_manager.init_app(wsgi_application)
     mail.init_app(wsgi_application)
     moment.init_app(wsgi_application)
-
-    from .main import main as main_blueprint
-    wsgi_application.register_blueprint(main_blueprint)
+    migrate.init_app(wsgi_application, database)
 
     from .auth import auth as auth_blueprint
     wsgi_application.register_blueprint(auth_blueprint, url_prefix='/auth')
@@ -34,4 +34,13 @@ def create_app(config_name):
     from .api_1_0 import api as api_blueprint
     wsgi_application.register_blueprint(api_blueprint, url_prefix='/api/v1.0')
 
+    from .errors import errors_blueprint
+    wsgi_application.register_blueprint(errors_blueprint)
+
+    from .main import main as main_blueprint
+    wsgi_application.register_blueprint(main_blueprint)
+
     return wsgi_application
+
+
+from app import models

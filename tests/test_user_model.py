@@ -215,10 +215,10 @@ class UserModelTestCase(unittest.TestCase):
 
     def test_get_available_chats_query(self):
         chats = self.bob.get_available_chats_query().all()
-        self.assertEqual(chats,
-                         (Chat
+        self.assertEqual(set(chats),
+                         set((Chat
                           .query
-                          .filter(Chat.users.contains(self.bob)).all()))
+                          .filter(Chat.users.contains(self.bob)).all())))
         Chat.mark_chats_as_removed(self.bob, [self.chat_bob_arthur])
         chats = self.bob.get_available_chats_query().all()
         self.assertNotEqual(chats,
