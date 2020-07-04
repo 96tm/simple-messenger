@@ -45,7 +45,6 @@ class ChatModelTestCase(unittest.TestCase):
                                   self.chat_morgana_bob])
         database.session.commit()
 
-    
     def tearDown(self):
         database.session.remove()
         database.drop_all()

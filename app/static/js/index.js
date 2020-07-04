@@ -438,7 +438,9 @@ class ChatWindow {
         this.hideRemoveChatButton();
         this.messageWindowReference.hide();
         this.selectedChatId = null;
-    }   
+    }
+
+    this.messageWindowReference.scrollDown();
   };
 
   loadChatsAjax(pageNumber=1, clearArea=false) {
