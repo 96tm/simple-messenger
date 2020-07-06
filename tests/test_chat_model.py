@@ -167,13 +167,16 @@ class ChatModelTestCase(unittest.TestCase):
 
     def test_to_json(self):
         chat = self.chat_bob_arthur
-        json_chat = chat.to_json(self.bob)
-        self.assertEqual(json_chat,
-                         {'chat_name': self.arthur.username,
-                          'is_group_chat': chat.is_group_chat,
-                          'date_created': chat.date_created,
-                          'date_modified': chat.date_modified,
-                          'messages': url_for('api.get_messages', 
-                                      chat_id=chat.id,
-                                      _external=True)
-                         })
+        self.app.config['SERVER_NAME'] = 'localhost'
+        with self.app.app_context():
+            json_chat = chat.to_json(self.bob)
+            self.assertEqual(json_chat,
+                            {'chat_name': self.arthur.username,
+                            'is_group_chat': chat.is_group_chat,
+                            'date_created': chat.date_created,
+                            'date_modified': chat.date_modified,
+                            'messages': url_for('api.get_messages', 
+                                        chat_id=chat.id,
+                                        _external=True)
+                            })
+        del self.app.config['SERVER_NAME']
