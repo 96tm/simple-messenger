@@ -32,13 +32,10 @@ class DevelopmentConfig(Config):
     MAIL_USE_TLS = True
     MAIL_USERNAME = os.environ.get('MAIL_USERNAME')
     MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')
-    SQLALCHEMY_DATABASE_URI = ('postgresql://' 
-                                         + os.environ['FLASK_DB_USER']
-                                         + ':' 
-                                         + os.environ['FLASK_DB_PASS']
-                                         + '@'
-                                         + os.environ['FLASK_DB_HOSTNAME'] + '/'
-                                         + 'simple_messenger_db')
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URI',
+                                             ('sqlite:///' 
+                                              + os.path.join(basedir, 
+                                                             'app.db')))
 
 
 class TestingConfig(Config):
@@ -51,18 +48,15 @@ class TestingConfig(Config):
 class ProductionConfig(Config):
     name = 'production'
     DEBUG = False
-    MAIL_SERVER = os.environ['MAIL_SERVER']
-    MAIL_PORT = os.environ['MAIL_PORT']
+    MAIL_SERVER = os.environ.get('MAIL_SERVER')
+    MAIL_PORT = os.environ.get('MAIL_PORT')
     MAIL_USE_TLS = True
     MAIL_USERNAME = os.environ.get('MAIL_USERNAME')
     MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')
-    SQLALCHEMY_DATABASE_URI = ('postgresql://' 
-                               + os.environ['FLASK_DB_USER']
-                               + ':' 
-                               + os.environ['FLASK_DB_PASS']
-                               + '@'
-                               + os.environ['FLASK_DB_HOSTNAME'] + '/'
-                               + os.environ['FLASK_DB_NAME'])
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URI',
+                                             ('sqlite:///' 
+                                              + os.path.join(basedir, 
+                                                             'app.db')))
 
 config = {'development': DevelopmentConfig,
           'testing':     TestingConfig,

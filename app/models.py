@@ -5,9 +5,8 @@ from datetime import datetime, timezone
 from itsdangerous import BadHeader, SignatureExpired
 from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
 from sqlalchemy.ext.associationproxy import association_proxy
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy import and_, not_, or_, select
+from sqlalchemy import and_, not_
 from flask import current_app, url_for
 from flask_login import UserMixin, AnonymousUserMixin
 from functools import partial
@@ -401,7 +400,8 @@ class Chat(database.Model):
         return (database
                 .session
                 .query(Chat)
-                .filter(Chat.users.contains(user), Chat.name.like('%' + chat_name + '%'))
+                .filter(Chat.users.contains(user),
+                        Chat.name.like('%' + chat_name + '%'))
                 .union(chats))
     
     @staticmethod
@@ -430,13 +430,12 @@ class Chat(database.Model):
         if chat_query:
             return (RemovedChat
                     .query
-                    .filter(and_(RemovedChat.user == user,
-                                 RemovedChat
-                                 .chat_id
-                                 .in_([chat.id
-                                       for chat
-                                       in chat_query.all()]
-                                     )
+                    .filter(RemovedChat.user == user,
+                            RemovedChat
+                            .chat_id
+                            .in_([chat.id
+                                for chat
+                                in chat_query.all()]
                                 )
                             )
                     )
@@ -459,10 +458,10 @@ class Chat(database.Model):
         return (Chat
                 .query
                 .filter(Chat.users.contains(user))
-                .join(UserChatTable, 
-                    and_(UserChatTable.c.chat_id == Chat.id,
-                         UserChatTable.c.user_id.in_(user_ids)
-                        )
+                .join(UserChatTable,
+                      and_(UserChatTable.c.chat_id == Chat.id,
+                           UserChatTable.c.user_id.in_(user_ids)
+                          )
                     )
                 )
 
@@ -572,7 +571,6 @@ class User(UserMixin, database.Model):
                             index=True,
                             nullable=False)
     password_hash = database.Column(database.String(128), nullable=False)
-
     contacts = database.relationship('Contact',
                                      foreign_keys=[Contact.user_id],
                                      backref=database.backref('user', 
@@ -594,7 +592,8 @@ class User(UserMixin, database.Model):
                                  primaryjoin='User.id==Message.recipient_id'))
     chats = database.relationship('Chat',
                                   secondary=UserChatTable,
-                                  backref=database.backref('users', lazy='dynamic'))
+                                  backref=database.backref('users', 
+                                                           lazy='dynamic'))
 
     removed_chats = database.relationship('RemovedChat',
                                           backref='user',
@@ -800,8 +799,8 @@ class User(UserMixin, database.Model):
         """
         query_to_update = (chat
                            .messages
-                           .filter(and_(Message.sender != self,
-                                        not_(Message.was_read))))
+                           .filter(Message.sender != self,
+                                   not_(Message.was_read)))
         messages = chat.messages.order_by(Message.date_created).all()
         message_dict_list = []
         for message in messages:
@@ -828,8 +827,8 @@ class User(UserMixin, database.Model):
         """
         query = (chat
                  .messages
-                 .filter(and_(Message.sender != self,
-                              not_(Message.was_read))))
+                 .filter(Message.sender != self,
+                         not_(Message.was_read)))
         messages = query.order_by(Message.date_created).all()
         message_dict_list = []
         for message in messages:
@@ -983,7 +982,7 @@ class Message(database.Model):
                          .filter_by(username=recipient_username)
                          .first())
         else:
-            raise ValidationError('Group chats are not implemented yet.') # TODO
+            raise ValidationError('Group chats are not implemented yet.')
         message = Message()
         message.text = text
         message.recipient = recipient

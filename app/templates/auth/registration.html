@@ -36,39 +36,27 @@
                 {{ form.hidden_tag() }}
                 <div class="form-label-group">
                   {{ form.username(class="form-control") }}
-                  {{ form.username.label}}
+                  {{ form.username.label }}
                 </div>
 
                 <div class="form-label-group">
                     {{ form.email(class="form-control") }}
-                    {{ form.email.label}}
+                    {{ form.email.label }}
                 </div>
 
                 <div class="form-label-group">
-                    <input id="{{form.password.id}}" 
-                           name="{{form.password.name | safe}}"
-                           type="password"
-                           class="form-control" 
-                           placeholder="{{form.password.label.text | safe}}" required>
-                    {{form.password.label}}
+                  {{ form.password(class="form-control") }}
+                  {{ form.password.label }}
                 </div>
 
                 <div class="form-label-group">
-                  <input id="{{form.password_confirmation.id}}" 
-                         name="{{form.password_confirmation.name | safe}}"
-                         type="password"
-                         class="form-control" 
-                         placeholder="{{form.password_confirmation.label.text | safe}}" required>
-                  {{form.password_confirmation.label}}
+                  {{ form.password_confirmation(class="form-control") }}
+                  {{ form.password_confirmation.label }}
               </div>
-                
-                <button id="{{form.submit.id}}"
-                        name="{{form.submit.name}}"
-                        type="submit"
-                        class="btn btn-lg btn-primary btn-block text-uppercase" >{{form.submit.label.text}}
-                </button>
-            </form>
+              
+              {{ form.submit(class="btn btn-lg btn-primary btn-block text-uppercase")}}
 
+            </form>
           </div>
         </div>
       </div>

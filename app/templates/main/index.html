@@ -21,18 +21,18 @@
               {{user_search_form.search_field()}}
             <hr>
             <div class="user-list">
-                <ul id="user-list-id" class="fa-ul">
-                  {% if users %}
-                    {% for user in users %}
-                    <li id="user-{{user.id}}" class="user-item">
-                      <span class="fa-li"><i class="fas"></i></span>
-                      <span>{{ user.username }}</span>
-                    </li>
-                    {% endfor %}
-                  {% else %}
-                  <li class="text-muted"><span class="fa-li"><i class="fas"></i></span>no users found</li>
-                  {% endif %}
-                </ul>
+              {% if users %}
+              <ul id="user-list-id" class="fa-ul">
+                {% for user in users %}
+                <li id="user-{{user.id}}" class="user-item">
+                  <span class="fa-li"><i class="fas"></i></span>
+                  <span>{{ user.username }}</span>
+                </li>
+                {% endfor %}
+              </ul>
+              {% else %}
+              <span>no users found  </span>
+              {% endif %}
             </div>
             <button id="add-contacts-id" class="btn btn-block btn-primary text-uppercase hidden-element">Add contacts</button>
           </div>
@@ -46,8 +46,8 @@
               {{chat_search_form.search_field()}}
             <hr>
             <div class="chat-list">
-              <ul id="chat-list-id" class="fa-ul">
-                {% if current_user %}
+              {% if chats %}
+                <ul id="chat-list-id" class="fa-ul">
                   {% for chat in chats %}
                   <li id="chat-{{ chat.chat_id}}" 
                       class="chat-item {% if current_chat_id == chat.chat_id %} selected-current-chat {% endif %}">
@@ -55,13 +55,11 @@
                     <span> {{chat.name}} </span>
                   </li>
                   {% endfor %}
-                {% else %}
-                <li class="text-muted">
-                  <span class="fa-li"><i class="fas fa-times"></i></span>
-                  no chats
-                </li>
-                {% endif %}
-              </ul>
+                </ul>
+              {% else %}
+                no chats
+              {% endif %}
+
               <button id="remove-selected-chat-id"
                       class="btn btn-block btn-primary 
                              text-uppercase 
@@ -103,6 +101,6 @@
 
 {% block scripts %}
   {{ super() }}
-  <script src="{{ url_for('static', filename='js/moment.js')}}"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.27.0/moment.min.js"></script>
   <script src="{{ url_for('static', filename='js/index.js')}}"></script>
 {% endblock %}

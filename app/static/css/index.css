@@ -82,6 +82,11 @@ textarea{
   height: 12em;
 }
 
+.chat-list,
+.user-list {
+  height: 12em;
+}
+
 li.chat-item,
 li.user-item{
   cursor: pointer;
