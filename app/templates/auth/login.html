@@ -32,35 +32,26 @@
             <h5 class="card-title text-center">Log in</h5>
 
             <form class="form-signin" method="POST" action="{{ url_for('auth.login') }}" role="form">
+                
                 {{ form.hidden_tag() }}
+                
                 <div class="form-label-group">
                     {{ form.email(class="form-control") }}
                     {{ form.email.label}}
                 </div>
 
                 <div class="form-label-group">
-                    <input id="{{form.password.id}}" 
-                           name="{{form.password.name}}"
-                           type="password"
-                           class="form-control" 
-                           placeholder="{{form.password.label.text}}" required>
-                    {{form.password.label}}
+                    {{ form.password(class="form-control") }}
+                    {{ form.password.label }}
                 </div>
 
                 <div class="custom-control custom-checkbox mb-3">
-                    <input id="{{form.remember_me.id}}"
-                           name="{{form.remember_me.name}}"
-                           type="checkbox" 
-                           class="custom-control-input">
-                    <label class="custom-control-label" 
-                           for="{{form.remember_me.id}}">{{ form.remember_me.label.text}}
-                    </label>
+                  {{ form.remember_me(class="custom-control-input")}}
+                  {{ form.remember_me.label(class="custom-control-label") }}
                 </div>
-                <button id="{{form.submit.id}}"
-                        name="{{form.submit.name}}"
-                        type="submit"
-                        class="btn btn-lg btn-primary btn-block text-uppercase" >{{form.submit.label.text}}
-                </button>
+
+                {{ form.submit(class="btn btn-lg btn-primary btn-block text-uppercase")}}
+                
                 <a href="{{ url_for('auth.signup') }}" class="btn btn-lg btn-primary btn-block text-uppercase">Sign Up</a>
             </form>
 

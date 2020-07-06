@@ -18,14 +18,12 @@ def index():
     current = current_user._get_current_object()
     users = current.get_other_users_query()
     chats = current.get_available_chats_query()
-
     users = (users
              .paginate(1, 
                        per_page=current_app
                                .config["USERS_PER_PAGE"],
                        error_out=False)
              .items)
-
     chat_list = []
     for chat in chats:
         recipient = chat.users.filter(User.id != current_user.id).first()

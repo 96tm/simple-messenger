@@ -11,7 +11,8 @@ class LoginForm(FlaskForm):
                          render_kw={'placeholder': 'Email'})
     password = PasswordField('Password', 
                              validators=[Required(), ],
-                             render_kw={'placeholder': 'Password'})
+                             render_kw={'placeholder': 'Password',
+                                        'required': 'required'})
     remember_me = BooleanField('Remember me')
     submit = SubmitField('Log In')
 
@@ -25,7 +26,8 @@ class RegistrationForm(FlaskForm):
                                                ('Username can only contain '
                                                + 'letters, digits, dots and '
                                                + 'underscores'))],
-                            render_kw={'placeholder': 'Username'})
+                            render_kw={'placeholder': 'Username',
+                                       'required': 'required'})
     email = StringField('Email',
                          validators=[Required(), Length(1, 64), Email()],
                          render_kw={'placeholder': 'Email'})
@@ -34,10 +36,14 @@ class RegistrationForm(FlaskForm):
                                          EqualTo('password_confirmation',
                                                  message=('Passwords '
                                                           + 'don\'t match'))],
-                             render_kw={'placeholder': 'Password'})
-    password_confirmation = PasswordField('Confirm password') 
-    password_confirmation.validators=[Required()]
-    password_confirmation.render_kw={'placeholder': 'Password'}
+                             render_kw={'placeholder': 'Password',
+                                        'required': 'required'})
+    render_kw = {'placeholder': 'Confirm password',
+                 'required': 'required'}
+    password_confirmation = PasswordField('Confirm password',
+                                          validators=[Required()],
+                                          render_kw=render_kw)
+    
     submit = SubmitField('Sign Up')
 
     def validate_email(self, field):

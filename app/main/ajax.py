@@ -54,7 +54,7 @@ def add_contacts_and_chats():
             current_user.add_contacts(new_contacts)
             data = {'added_chats': added_chats}
             return jsonify(data)
-        except ValueError:
+        except (ValueError, TypeError):
             pass
     return generate_json_response(400)
 
