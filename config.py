@@ -10,11 +10,14 @@ class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY', 'change_debug_secret_key!')
     SQLALCHEMY_COMMIT_ON_TEARDOWN = True
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+
+    SESSION_TYPE = os.environ.get('SESSION_TYPE', 'filesystem')
     
-    MAIL_SUBJECT_PREFIX = '[SimpleMessenger]'
+    MAIL_SUBJECT_PREFIX = os.environ.get('MAIL_SUBJECT_PREFIX',
+                                         '[SimpleMessenger]')
     MAIL_SENDER = os.environ.get('MAIL_SENDER', 'Admin <use@some.mail')
     ADMIN = os.environ.get('SIMPLE_MESSENGER_ADMIN', 'Admin')
-    ADMIN_MAIL = 'admin@admin.admin'
+    ADMIN_MAIL = os.environ.get('ADMIN_MAIL', 'admin@admin.admin')
     MAX_STRING_LENGTH = 64
     USERS_PER_PAGE = 10
     CHATS_PER_PAGE = 10

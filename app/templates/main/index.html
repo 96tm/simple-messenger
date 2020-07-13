@@ -11,7 +11,7 @@
 
 {% block page_content %}
 {% if current_user.is_authenticated %}
-<div class="container">
+  <div class="container">
     <div class="row">
       <!-- User search-->
       <div id="user-window-id" class="col-lg-3 {% if not current_chat_id %}center-from-left{% endif %}">
@@ -22,10 +22,9 @@
             <hr>
             <div class="user-list">
               {% if users %}
-              <ul id="user-list-id" class="fa-ul">
+              <ul id="user-list-id" class="list-group-flush scrollbar-dark">
                 {% for user in users %}
-                <li id="user-{{user.id}}" class="user-item">
-                  <span class="fa-li"><i class="fas"></i></span>
+                <li id="user-{{user.id}}" class="list-group-item">
                   <span>{{ user.username }}</span>
                 </li>
                 {% endfor %}
@@ -47,13 +46,21 @@
             <hr>
             <div class="chat-list">
               {% if chats %}
-                <ul id="chat-list-id" class="fa-ul">
+                <ul id="chat-list-id" class="list-group-flush scrollbar-dark">
                   {% for chat in chats %}
-                  <li id="chat-{{ chat.chat_id}}" 
-                      class="chat-item {% if current_chat_id == chat.chat_id %} selected-current-chat {% endif %}">
-                    <span class="fa-li"><i class="fas fa-times"></i></span>
-                    <span> {{chat.name}} </span>
-                  </li>
+                    <li id="chat-{{ chat.chat_id}}"
+                        class="list-group-item
+                              {% if current_chat_id == chat.chat_id %} 
+                                selected-current-chat 
+                              {% endif %}">
+                      <span> {{chat.name}} </span>
+                      {% if chat.unread_messages_count %}
+                        <span id="chat-{{ chat.chat_id }}-unread-messages-count"
+                              class="badge badge-primary badge-pill list-group-item-dark">
+                          {{chat.unread_messages_count}}
+                        </span>
+                      {% endif %}
+                    </li>
                   {% endfor %}
                 </ul>
               {% else %}
@@ -80,9 +87,8 @@
                 class="card-title text-muted text-uppercase text-center">
             {% if current_chat_name %} {{current_chat_name}} {% endif %}
             </h5>
-
               <div id="message-area-id" 
-                   class="message-area">
+                   class="message-area scrollbar-dark">
               </div>
             <hr>
               <div class="message-field-window">
@@ -102,5 +108,6 @@
 {% block scripts %}
   {{ super() }}
   <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.27.0/moment.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.2.0/socket.io.js" integrity="sha256-yr4fRk/GU1ehYJPAs8P4JlTgu0Hdsp4ZKrx8bDEDC3I=" crossorigin="anonymous"></script>
   <script src="{{ url_for('static', filename='js/index.js')}}"></script>
 {% endblock %}

@@ -1,15 +1,272 @@
 from datetime import datetime, timezone
-from flask import current_app, render_template, session
+from flask import abort, copy_current_request_context, current_app, escape
+from flask import render_template, request, session
 from flask_login import current_user, login_required
-import json
+from sqlalchemy.exc import IntegrityError
+
 
 from . import main
-from .ajax import add_contacts_and_chats, check_new_messages, choose_chat
-from .ajax import load_chats, load_users, remove_chat, search_chats
-from .ajax import search_users, send_message
+
+from .ajax import load_users
+from .ajax import search_users
 from .forms import ChatSearchForm, MessageForm, UserSearchForm
-from .. import database
-from ..models import Chat, User
+from .. import database, socket_io
+from ..models import Chat, Message, RemovedChat, User
+
+from sqlalchemy.event import listens_for
+from flask_socketio import join_room, leave_room
+import gevent
+from gevent.pool import Pool
+
+
+USER_WORKER_MAPPING = dict()
+USER_WEBSOCKET_MAPPING = dict()
+POOL = Pool()
+
+
+@socket_io.on('search_chats')
+def search_chats(data):
+    try:
+        chat_name = escape(str(data['chat_name']))
+        chat_name = chat_name[:current_app.config['MAX_STRING_LENGTH']]
+        page_number = int(data['page_number'])
+
+        chats = (Chat.search_chats_query(chat_name, current_user)
+                    .paginate(page_number, 
+                            current_app.config['CHATS_PER_PAGE'],
+                            error_out=False)
+                    .items)
+        chats_dict_list = [{'chat_name': chat.get_name(current_user),
+                            'chat_id': str(chat.id)}
+                            for chat 
+                            in chats]
+        socket_io.emit('search_chats',
+                       {'found_chats': chats_dict_list},
+                       room=USER_WEBSOCKET_MAPPING[current_user.id])
+    except (LookupError, ValueError, OverflowError):
+        abort(404)
+
+@socket_io.on('load_chats')
+def load_chats(data):
+    try:
+        page_number = int(data['page_number'])
+        chats = (current_user.get_available_chats_query()
+                .paginate(page_number, 
+                        current_app.config['CHATS_PER_PAGE'],
+                        error_out=False)
+                .items)
+        chats_dict_list = [{'chat_name': chat.get_name(current_user),
+                            'chat_id': str(chat.id)}
+                            for chat
+                            in chats]
+        socket_io.emit('load_chats', 
+                       {'chats': chats_dict_list,
+                        'page_number': page_number},
+                       room=USER_WEBSOCKET_MAPPING[current_user.id])
+    except (LookupError, ValueError, OverflowError):
+        abort(404)
+
+@socket_io.on('remove_chat')
+def remove_chat(data):
+    print('removing chat', current_user.username)
+    print('removed chats', RemovedChat.query.all())
+    try:
+        chat_id = int(data['chat_id'])
+        chat = Chat.query.get_or_404(chat_id)
+        session['current_chat_id'] = None
+        current_user.mark_chats_as_removed([chat])
+        socket_io.emit('remove_chat',
+                       {'chat_id': str(chat_id)},
+                       room=USER_WEBSOCKET_MAPPING[current_user.id])
+        print('successful removal')
+    except (LookupError, ValueError, OverflowError, IntegrityError):
+        abort(404)
+
+
+@socket_io.on('connect')
+def save_room():
+    global POOL, USER_WORKER_MAPPING, USER_WEBSOCKET_MAPPING
+    print(current_user.username, request.sid)
+    @copy_current_request_context
+    def check_messages(user, sid):
+        while True:
+            available_chats = user.get_available_chats_query().all()
+            chats = []
+            messages = []
+            for chat in available_chats:
+                unread_messages_query = user.get_unread_messages_query(chat)
+                count = unread_messages_query.count()
+                if count:
+                    chats.append({'chat_id': str(chat.id),
+                                  'unread_messages_count': count,
+                                  'chat_name': chat.get_name(current_user)})
+                    current_chat_id = (USER_WEBSOCKET_MAPPING
+                                       .get('current_chat_id'))
+                    if current_chat_id == chat.id:
+                        messages = (Message
+                                    .get_messages_list(unread_messages_query))
+            if chats:
+                data = {'chats': chats,
+                        'current_chat_messages': messages,
+                        'current_username': user.username}
+                socket_io.emit('chat_updated', data, room=sid)
+                print('emitted')
+            gevent.sleep(2)
+    if current_user and not current_user.is_anonymous:
+        USER_WEBSOCKET_MAPPING[current_user.id] = request.sid
+
+
+@socket_io.on('disconnect')
+def test_disconnect():
+    global POOL, USER_WORKER_MAPPING, USER_WEBSOCKET_MAPPING
+    if current_user and not current_user.is_anonymous:
+        print('DISCONNECTED', POOL, USER_WORKER_MAPPING)
+        worker = USER_WORKER_MAPPING.get(current_user.id)
+        if worker:
+            POOL.killone(worker)
+            POOL.discard(worker)
+            del USER_WORKER_MAPPING[current_user.id]
+            del USER_WEBSOCKET_MAPPING[current_user.id]
+            print('DISCONNECTED', POOL, USER_WORKER_MAPPING)
+
+
+@socket_io.on('send_message')
+def send_message(data):
+    global POOL, USER_WORKER_MAPPING
+    print('sent')
+    try:
+        message = None
+        text = escape(str(data['message_text']).rstrip())
+        if not text:
+            return
+        chat_id = int(data['chat_id'])
+        chat = Chat.query.get_or_404(chat_id)
+        recipient = None
+        if not chat.is_group_chat:
+            recipient = (chat
+                        .users
+                        .filter(User.id != current_user.id)
+                        .first())
+        message = Message(text=text,
+                          sender=current_user,
+                          recipient=recipient,
+                          chat=chat)
+        chat.date_modified = datetime.now(tz=timezone.utc)
+        database.session.add_all([message, chat])
+        database.session.commit()
+        recipients = (chat
+                      .users
+                      .filter(User.username != current_user.username)
+                      .all())
+        print('dict is', USER_WEBSOCKET_MAPPING)
+        print('recipients are', recipients)
+        for recipient in recipients:
+            recipient.unmark_chats_as_removed([chat])
+            if recipient.id in USER_WEBSOCKET_MAPPING:
+                sid = USER_WEBSOCKET_MAPPING[recipient.id]
+                data = get_updated_chats(recipient)
+                print(recipient.username, 'sid is', sid)
+                if data:
+                    worker = (gevent
+                             .spawn(copy_current_request_context(send_update),
+                                    data=data,
+                                    sid=sid))
+                    POOL.add(worker)
+                    print('will send to', recipient.username, sid)
+    except (ValueError, OverflowError):
+        abort(404)
+    message_dict = {
+        'text': message.text,
+        'date_created': message.date_created.isoformat(),
+        'sender_username': message.sender.username
+    }
+    socket_io.emit('send_message', 
+                   {'message': message_dict,
+                    'current_username': current_user.username,
+                    'chat_name': chat.get_name(current_user)},
+                   room=USER_WEBSOCKET_MAPPING[current_user.id])
+
+@socket_io.on('flush_messages')
+def flush_messages(data):
+    try:
+        chat_id = int(data['chat_id'])
+        chat = Chat.query.get_or_404(chat_id)
+        Message.flush_messages(current_user.get_unread_messages_query(chat))
+    except (ValueError, OverflowError):
+        abort(404)
+
+@socket_io.on('choose_chat')
+def choose_chat(data):
+    try:
+        chat_id = int(data['chat_id'])
+        saved_chat_id = session.get('current_chat_id')
+        print(saved_chat_id)
+        if saved_chat_id == chat_id:
+            session['current_chat_id'] = None
+            socket_io.emit('choose_chat',
+                           {'messages':[],
+                            'chat_name': '',
+                            'chat_id': str(chat_id),
+                            'current_username': current_user.username},
+                           room=USER_WEBSOCKET_MAPPING[current_user.id])
+        else:
+            chat = Chat.query.get_or_404(chat_id)
+            message_dict_list = current_user.get_messages(chat)
+            Message.flush_messages(current_user
+                                   .get_unread_messages_query(chat))
+            session['current_chat_id'] = chat_id
+            socket_io.emit('choose_chat', 
+                            {'messages': message_dict_list,
+                             'chat_name': chat.get_name(current_user),
+                             'chat_id': str(chat.id),
+                             'current_username': current_user.username},
+                            room=USER_WEBSOCKET_MAPPING[current_user.id])
+    except (ValueError, OverflowError):
+        abort(404)
+
+
+@socket_io.on('add_contacts_and_chats')
+def add_contacts_and_chats(data):
+    print('add contacts')
+    try:
+        print('trying')
+        new_contacts = []
+        user_ids = [int(user_id) for user_id in data['user_ids']]
+        removed_query = current_user.get_removed_chats_query(user_ids)
+        removed_chats = removed_query.all()
+        current_user.unmark_chats_as_removed(removed_query)
+        added_chats = [{'chat_name': chat.get_name(current_user),
+                        'chat_id': str(chat.id)}
+                        for chat
+                        in removed_chats]
+        for user in User.query.filter(User.id.in_(user_ids)):
+            if not current_user.has_contact(user):
+                new_contacts.append(user)
+            chat = Chat.get_chat([current_user, user])
+            if not chat:
+                chat = Chat()
+                database.session.add(chat)
+                chat.add_users([current_user, user])
+                user.mark_chats_as_removed([chat])
+                database.session.commit()
+                chat_data = {'chat_name': chat.get_name(current_user),
+                             'chat_id': str(chat.id)}
+                added_chats.append(chat_data)
+        socket_io.emit('add_contacts_and_chats',
+                    {'added_chats': added_chats},
+                    room=USER_WEBSOCKET_MAPPING[current_user.id])
+        print('finished adding')
+    except (ValueError, TypeError):
+        abort(404)
+
+
+@socket_io.on("test")
+def test_t(message):
+    socket_io.emit("test", {'sid': request.sid,
+                            'request_sid': session.get(current_user.id),
+                            'user': current_user.username,
+                            'other_sid': session.get(User.query.filter_by(username='arthur').first().id)},
+                   room=request.sid) 
 
 
 @main.route('/')
@@ -21,14 +278,24 @@ def index():
     users = (users
              .paginate(1, 
                        per_page=current_app
-                               .config["USERS_PER_PAGE"],
+                                .config["USERS_PER_PAGE"],
                        error_out=False)
              .items)
     chat_list = []
+    current_chat_id = session.get('current_chat_id')
     for chat in chats:
         recipient = chat.users.filter(User.id != current_user.id).first()
         name = chat.name or recipient.username
-        chat_list.append({'name': name, 'chat_id': chat.id})
+        unread_messages_count = 0
+        if chat.id == current_chat_id:
+            Message.flush_messages(current.get_unread_messages_query(chat))
+        else:
+            unread_messages_count = (current_user
+                                    .get_unread_messages_query(chat)
+                                    .count())
+        chat_list.append({'name': name,
+                          'chat_id': chat.id,
+                          'unread_messages_count': unread_messages_count})
     messages = None
     current_chat_id = None
     current_chat_name = None
@@ -46,6 +313,33 @@ def index():
                            message_form = MessageForm(),
                            user_search_form=UserSearchForm(),
                            chat_search_form=ChatSearchForm())
+
+
+def get_updated_chats(user):
+    available_chats = user.get_available_chats_query().all()
+    chats = []
+    messages = []
+    for chat in available_chats:
+        unread_messages_query = user.get_unread_messages_query(chat)
+        count = unread_messages_query.count()
+        if count:
+            chats.append({'chat_id': str(chat.id),
+                          'unread_messages_count': count,
+                          'chat_name': chat.get_name(user)})
+            current_chat_id = session.get('current_chat_id')
+            if current_chat_id == chat.id:
+                messages = (Message
+                            .get_messages_list(unread_messages_query))
+    if chats:
+        data = {'chats': chats,
+                'current_chat_messages': messages,
+                'current_username': user.username}
+        return data
+
+
+def send_update(data, sid):
+    socket_io.emit('chat_updated', data, room=sid)
+    print('emitted')
 
 
 @main.before_app_request

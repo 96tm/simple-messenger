@@ -102,8 +102,8 @@ class ClientTestCase(unittest.TestCase):
             'email': 'bob@bob.bob',
             'password': 'bob'
         }, follow_redirects=True)
-        self.assertIn(f'<li id="user-{self.arthur.id}" class="user-item">',
-                      response.get_data(as_text=True))
+        self.assertIn(f'<liid="user-{self.arthur.id}"class="user-item">',
+                      response.get_data(as_text=True).replace(' ', ''))
 
     def tearDown(self):
         database.session.remove()

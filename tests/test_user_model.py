@@ -289,12 +289,12 @@ class UserModelTestCase(unittest.TestCase):
         message_dict_2 = {
                             'text':message2.text,
                             'sender_username': message2.sender.username,
-                            'date_created': message2.date_created
+                            'date_created': message2.date_created.isoformat()
                          }
         message_dict_3 = {
                             'text':message3.text,
                             'sender_username': message3.sender.username,
-                            'date_created': message3.date_created
+                            'date_created': message3.date_created.isoformat()
                          }        
         messages = self.bob.get_unread_messages(self.chat_bob_arthur)
         self.assertIn(message_dict_2, messages)

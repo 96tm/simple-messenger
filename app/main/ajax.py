@@ -26,57 +26,6 @@ def generate_json_response(status_code, data=None):
     return json_response
 
 
-@main.route('/add_contacts_and_chats', methods=['POST'])
-@login_required
-def add_contacts_and_chats():
-    if request.is_json and request.json and request.json.get('user_ids'):
-        try:
-            new_contacts = []
-            user_ids = [int(user_id) for user_id in request.json['user_ids']]
-            chats = Chat.get_removed_chats(current_user, user_ids)
-            added_chats = [{'chat_name': chat.get_name(current_user),
-                            'chat_id': str(chat.id)}
-                           for chat
-                           in chats]
-            for user_id in user_ids:
-                user = User.query.get_or_404(user_id)
-                if not current_user.has_contact(user):
-                    new_contacts.append(user)
-                chat = Chat.get_chat([current_user, user])
-                if not chat:
-                    chat = Chat()
-                    database.session.add(chat)
-                    chat.add_users([current_user, user])
-                    database.session.commit()
-                    chat_data = {'chat_name': chat.get_name(current_user),
-                                 'chat_id': str(chat.id)}
-                    added_chats.append(chat_data)
-            current_user.add_contacts(new_contacts)
-            data = {'added_chats': added_chats}
-            return jsonify(data)
-        except (ValueError, TypeError):
-            pass
-    return generate_json_response(400)
-
-
-@main.route('/check_new_messages', methods=['POST'])
-@login_required
-def check_new_messages():
-    if (request.is_json 
-        and request.json 
-        and request.json.get('chat_id') is not None):
-            try:
-                chat_id = int(request.json['chat_id'])
-                chat = Chat.query.get_or_404(chat_id)
-                message_dict_list = current_user.get_unread_messages(chat)
-                data = {'messages': message_dict_list,
-                        'current_username': current_user.username}
-                return jsonify(data)
-            except (ValueError, OverflowError):
-                return generate_json_response(400)
-    return generate_json_response(404)
-
-
 @main.route('/load_messages', methods=['POST'])
 @login_required
 def load_messages():
@@ -178,7 +127,7 @@ def remove_chat():
                 chat_id = int(request.json['chat_id'])
                 chat = Chat.query.get_or_404(chat_id)
                 session['current_chat_id'] = None
-                Chat.mark_chats_as_removed(current_user, [chat])
+                current_user.mark_chats_as_removed([chat])
                 data = {'chat_id': str(chat_id)}
                 return jsonify({'removed_chat': data})
             except (ValueError, OverflowError):
@@ -236,6 +185,7 @@ def search_users():
 @main.route('/send_message', methods=['POST'])
 @login_required
 def send_message():
+    print('SENT')
     if (request.is_json 
         and request.json 
         and request.json.get('message') is not None):
@@ -254,7 +204,8 @@ def send_message():
                                   sender=current_user,
                                   recipient=recipient,
                                   chat=chat)
-                database.session.add(message)
+                chat.date_modified = datetime.now(tz=timezone.utc)
+                database.session.add_all([message, chat])
                 database.session.commit()
             except (ValueError, OverflowError):
                 return generate_json_response(400)

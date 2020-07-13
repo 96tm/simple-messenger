@@ -11,6 +11,7 @@ docker run --name postgres -d -p 5432:5432 \
 
 docker run --name simple_messenger -d -p 8000:5000 \
 -e SECRET_KEY=make_it_secret \
+-e SESSION_TYPE=filesystem \
 -e MAIL_SERVER=mail_server \
 -e MAIL_SENDER=mail@send.er \
 -e MAIL_PORT=587 \

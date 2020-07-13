@@ -1,18 +1,20 @@
-from flask import Blueprint, Flask, cli
-from flask_login import LoginManager
+from flask import Blueprint, Flask, request, session, current_app
+from flask_login import LoginManager, current_user
 from flask_mail import Mail
 from flask_sqlalchemy import SQLAlchemy
-from flask_moment import Moment
 from flask_migrate import Migrate
 from flask_socketio import SocketIO
+from flask_session import Session
 
 from config import config
 
+
 database = SQLAlchemy()
 login_manager = LoginManager()
+flask_session = Session()
 mail = Mail()
 migrate = Migrate()
-socket_io = SocketIO()
+socket_io = SocketIO(manage_session=False, async_mode='gevent')
 
 
 def create_app(config_name):
@@ -25,6 +27,7 @@ def create_app(config_name):
     mail.init_app(wsgi_application)
     migrate.init_app(wsgi_application, database)
     socket_io.init_app(wsgi_application)
+    flask_session.init_app(wsgi_application)
 
     from .auth import auth as auth_blueprint
     wsgi_application.register_blueprint(auth_blueprint, url_prefix='/auth')

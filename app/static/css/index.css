@@ -1,4 +1,4 @@
-/* li.chat-item::after{
+li.updated-chat.chat-item::after{
   content: '';
   display: inline-block;
   height: .7em;
@@ -7,10 +7,14 @@
   background-size:contain;
   background-repeat:no-repeat;
   background-position: bottom; 
-} */
+}
 
-li.selected-element {
-  font-weight: bold;
+li.selected-element,
+li.selected-current-chat {
+  background-color: #f5f5f5;
+  border-radius: 0.25rem;
+  background: rgba(0, 0, 0, 0.25);
+  color: white;
 }
 
 .center-from-left {
@@ -19,11 +23,6 @@ li.selected-element {
 
 .center-from-right {
   margin-right: auto;
-}
-
-
-li.selected-current-chat{
-  font-weight: bold;
 }
 
 .hidden-element{
@@ -75,6 +74,11 @@ textarea{
   transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;
 }
 
+.list-group-item {
+  cursor: pointer;
+  border-bottom: 1px solid rgba(0,0,0,.125) !important;
+}
+
 #user-list-id,
 #chat-list-id {
   padding-left: 0;
@@ -87,15 +91,18 @@ textarea{
   height: 12em;
 }
 
-li.chat-item,
+/* li.chat-item,
 li.user-item{
   cursor: pointer;
   list-style: none;
-}
+} */
 
 li.chat-item:hover,
 li.user-item:hover{
-  font-weight: bold;
+  background-color: #f5f5f5;
+  border-radius: 0.25rem;
+  background: rgba(0, 0, 0, 0.25);
+  color: white;
 }
 
 .row .card {
@@ -116,12 +123,32 @@ li.user-item:hover{
   font-weight: bold;
 }
 
-.row ul li {
-  margin-bottom: 1rem;
+.list-group {
+  border: none;
 }
 
 .row .text-muted {
   opacity: 0.7;
+}
+
+
+/* scrollbars */
+
+
+.scrollbar-dark::-webkit-scrollbar {
+
+  background-color: #F5F5F5; 
+}
+  
+.scrollbar-dark::-webkit-scrollbar-thumb {
+  border-radius: 10px;
+  background-image: -webkit-linear-gradient(330deg, #c9c9c98e 0%,#c9c9c98e 100%);
+  background-image: #c9c9c98e;
+}
+
+.scrollbar-dark {
+  scrollbar-color: #c9c9c98e white;
+
 }
 
 /* Hover Effects on Card */

@@ -202,8 +202,6 @@ class Chat(database.Model):
 
     delete_users(users)
 
-    get_chat(users)
-
 
     Static methods defined here:
 
@@ -211,16 +209,10 @@ class Chat(database.Model):
 
     search_chats_query(chat_name, user)
 
-    get_removed_query(user, chat_query=None)
-
-    get_chat_query(user, user_ids)
-
-    mark_chats_as_removed(user, chats)
-
 
     Class methods defined here:
-
-    get_removed_chats(user, user_ids)
+    
+    get_chat(users)
     """
     __tablename__ = 'chats'
     id = database.Column(database.Integer, primary_key=True)
@@ -403,113 +395,19 @@ class Chat(database.Model):
                 .filter(Chat.users.contains(user),
                         Chat.name.like('%' + chat_name + '%'))
                 .union(chats))
-    
-    @staticmethod
-    def get_chat(users):
+
+    @classmethod
+    def get_chat(cls, users):
         """
         Return chat of users in given sequence.
 
         :param user: sequence of User model instances
         :returns: Chat model instance
         """
-        chat = Chat.query
+        chat = cls.query
         for user in users:
-            chat = chat.filter(Chat.users.contains(user))
+            chat = chat.filter(cls.users.contains(user))
         return chat.first()
-
-    @staticmethod
-    def get_removed_query(user, chat_query=None):
-        """
-        Return RemovedChat query for user
-        (based on chat query, if given).
-
-        :param user: User model instance
-        :param chat_query: Chat model query
-        :returns: RemovedChat model query
-        """
-        if chat_query:
-            return (RemovedChat
-                    .query
-                    .filter(RemovedChat.user == user,
-                            RemovedChat
-                            .chat_id
-                            .in_([chat.id
-                                for chat
-                                in chat_query.all()]
-                                )
-                            )
-                    )
-        else:
-            return (RemovedChat
-                    .query
-                    .filter(RemovedChat.user==user))
-
-    @staticmethod
-    def get_chat_query(user, user_ids):
-        """
-        Return query of chats 
-        of given user with users 
-        identified by given user_ids.
-        
-        :param user: User model instance
-        :param user_ids: sequence of integers
-        :returns: Chat model query
-        """
-        return (Chat
-                .query
-                .filter(Chat.users.contains(user))
-                .join(UserChatTable,
-                      and_(UserChatTable.c.chat_id == Chat.id,
-                           UserChatTable.c.user_id.in_(user_ids)
-                          )
-                    )
-                )
-
-    @staticmethod
-    def mark_chats_as_removed(user, chats):
-        """
-        Add RemovedChat record
-        for each chat in given chats for given user.
-        
-        :param user: User model instance
-        :param chats: sequence of Chat model instances
-        """
-        for chat in chats:
-            removed_chat = RemovedChat()
-            removed_chat.user = user
-            removed_chat.chat = chat
-            database.session.add(removed_chat)
-        database.session.commit()
-    
-    @classmethod
-    def get_removed_chats(cls, user, user_ids):
-        """
-        Return list of chats of given user
-        with users having
-        given user_ids
-        which are marked as removed by current user.
-        Delete records about the chats from RemovedChat.
-        
-        :param user: User model instance
-        :param user_ids: sequence of integers
-        :returns: list of Chat model instances
-        """
-        chat_query = cls.get_chat_query(user, user_ids)
-        removed_chat_query = cls.get_removed_query(user, chat_query)
-        chats = (chat_query
-                .join(removed_chat_query.subquery(),
-                      Chat
-                      .id
-                      .in_([removed.chat_id 
-                            for removed
-                            in removed_chat_query]
-                          )
-                     )
-                .all()
-                )
-        removed_chat_query.delete(synchronize_session='fetch')
-        return chats
-
 
 class User(UserMixin, database.Model):
     """
@@ -518,6 +416,16 @@ class User(UserMixin, database.Model):
 
 
     Methods defined here:
+
+    get_chat_query(user_ids)
+
+    get_removed_query(chat_query=None)
+
+    get_removed_chats_query(user_ids)
+
+    mark_chats_as_removed(chats)
+
+    unmark_chats_as_removed(chats)
 
     has_permission(permission)
 
@@ -543,7 +451,7 @@ class User(UserMixin, database.Model):
     
     get_messages(chat)
     
-    get_unread_messages(chat)
+    get_unread_messages_query(chat)
     
     search_users_query(username, users_query)
 
@@ -647,6 +555,103 @@ class User(UserMixin, database.Model):
         :param password: string
         """
         self.password_hash = generate_password_hash(password)
+
+    def get_chat_query(self, user_ids):
+        """
+        Return a query the current user's chats 
+        with users identified by the given user_ids.
+        
+        :param user_ids: sequence of integers
+        :returns: Chat model query
+        """
+        return (Chat
+                .query
+                .filter(Chat.users.contains(self))
+                .join(UserChatTable,
+                      and_(UserChatTable.c.chat_id == Chat.id,
+                           UserChatTable.c.user_id.in_(user_ids)
+                          )
+                    )
+                )
+
+    def get_removed_query(self, chat_query=None):
+        """
+        Return RemovedChat query for the given user
+        (based on the chat query, if given).
+
+        :param user: User model instance
+        :param chat_query: Chat model query
+        :returns: RemovedChat model query
+        """
+        if chat_query:
+            return (RemovedChat
+                    .query
+                    .filter(RemovedChat.user == self,
+                            RemovedChat
+                            .chat_id
+                            .in_([chat.id
+                                for chat
+                                in chat_query.all()]
+                                )
+                            )
+                    )
+        else:
+            return (RemovedChat
+                    .query
+                    .filter(RemovedChat.user==self))
+
+    def get_removed_chats_query(self, user_ids):
+        """
+        Return a query of chats 
+        with users having
+        the given user_ids
+        which are marked as removed by the current user.
+        
+        :param user_ids: sequence of integers
+        :returns: Chat model query
+        """
+        chat_query = self.get_chat_query(user_ids)
+        removed_chat_query = self.get_removed_query(chat_query)
+        result = (chat_query
+                  .join(removed_chat_query.subquery(),
+                        Chat
+                        .id
+                        .in_([removed.chat_id 
+                              for removed
+                              in removed_chat_query]
+                            )
+                       )
+                 )
+        # removed_chat_query.delete(synchronize_session='fetch')
+        return result
+    
+    def mark_chats_as_removed(self, chats):
+        """
+        Add RemovedChat record
+        for each chat in the given chats.
+        
+        :param chats: sequence of Chat model instances
+        """
+        for chat in chats:
+            removed_chat = RemovedChat()
+            removed_chat.user = self
+            removed_chat.chat = chat
+            database.session.add(removed_chat)
+        database.session.commit()
+    
+    def unmark_chats_as_removed(self, chats):
+        """
+        Delete RemovedChat record
+        for each chat in the given chats.
+        
+        :param chats: sequence of Chat model instances
+        """
+        chat_ids = [chat.id for chat in chats]
+        removed_chats_query = (RemovedChat
+                                .query
+                                .filter(RemovedChat.chat_id.in_(chat_ids),
+                                        RemovedChat.user_id == self.id))
+        removed_chats_query.delete(synchronize_session='fetch')
     
     def has_permission(self, permission):
         """
@@ -660,7 +665,6 @@ class User(UserMixin, database.Model):
         """
         return (self.role is not None
                 and (self.role.permissions & permission == permission))
-    
     
     def verify_password(self, password):
         """
@@ -773,11 +777,12 @@ class User(UserMixin, database.Model):
     def get_available_chats_query(self):
         """
         Return query of current user's chats 
-        not marked as removed.
+        not marked as removed ordered by the modification date
+        in descending order.
 
         :returns: User model query
         """
-        removed_chats = Chat.get_removed_query(self)
+        removed_chats = self.get_removed_query()
         return (Chat
                 .query
                 .filter(Chat.users.contains(self))
@@ -791,8 +796,7 @@ class User(UserMixin, database.Model):
         """
         Return a list of dictionaries with keys
         'text', 'date_created', 'sender_username', 'recipient_username'
-        for messages of given chat and set column 'was_read' to True
-        for messages received by user and not yet read.
+        sorted by the creation date in ascending order.
 
         :param chat: Chat model instance
         :returns: list of dictionaries
@@ -809,38 +813,24 @@ class User(UserMixin, database.Model):
             sender_name = sender.username if sender else None
             recipient_name = recipient.username if recipient else None
             message_dict = {'text': message.text,
-                            'date_created': message.date_created,
+                            'date_created': message.date_created.isoformat(),
                             'sender_username': sender_name,
                             'recipient_username': recipient_name}
             message_dict_list.append(message_dict)
-        Message.flush_messages(query_to_update)
+        # Message.flush_messages(query_to_update)
         return message_dict_list
-
-    def get_unread_messages(self, chat):
+    
+    def get_unread_messages_query(self, chat):
         """
-        Return a list of dictionaries with keys 
-        'text', 'sender_username', 'date_created'
-        for unread messages from given chat to curent user.
+        Return a query of unread messages from the given chat.
 
         :param chat: Chat model instance
-        :returns: list of dictionaries
+        :returns: Message model query
         """
-        query = (chat
-                 .messages
-                 .filter(Message.sender != self,
-                         not_(Message.was_read)))
-        messages = query.order_by(Message.date_created).all()
-        message_dict_list = []
-        for message in messages:
-            sender = message.sender
-            sender_username = sender.username if sender else None
-            date_created = message.date_created
-            message_dict = {'text': message.text,
-                            'sender_username': sender_username,
-                            'date_created': date_created}
-            message_dict_list.append(message_dict)
-        Message.flush_messages(query)
-        return message_dict_list
+        return (chat
+                .messages
+                .filter(Message.sender != self,
+                        not_(Message.was_read)))
 
     def search_users_query(self, username, users_query):
         """
@@ -890,6 +880,8 @@ class Message(database.Model):
 
 
     Static methods defined here:
+
+    get_messages_list(message_query)
 
     from_json(json_message)
 
@@ -964,6 +956,30 @@ class Message(database.Model):
                    'recipient_username': recipient_username,
                    'chat_name': self.chat.get_name(user)}
         return message
+    
+    @staticmethod
+    def get_messages_list(message_query):
+        """
+        Return a list of dictionaries with keys 
+        'text', 'sender_username', 'date_created'
+        for the messages from the given query
+        sorted by the modification date in ascending order.
+
+        :param message_query: Message model query
+        :returns: list of dictionaries
+        """
+
+        message_dict_list = []
+        for message in message_query.order_by(Message.date_created).all():
+            sender = message.sender
+            sender_username = sender.username if sender else None
+            date_created = message.date_created
+            message_dict = {'text': message.text,
+                            'sender_username': sender_username,
+                            'date_created': date_created.isoformat()}
+            message_dict_list.append(message_dict)
+        # Message.flush_messages(query)
+        return message_dict_list
     
     @staticmethod
     def from_json(json_message):
