@@ -1,7 +1,7 @@
 from . import api, errors
 from .authentication import auth
 from .. import database
-from ..models import Chat, Message
+from ..models import Message
 
 from flask import abort, current_app, g, jsonify, request, url_for
 

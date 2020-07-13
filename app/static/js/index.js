@@ -1,7 +1,7 @@
 "use strict";
 
 
-// server sends numbers as strings on ajax requests
+// server sends numbers as strings on requests
 // assume moment.js is loaded
 // assume socket.io is loaded
 
@@ -94,10 +94,10 @@ class UserWindow {
     this.userSearchInput.addEventListener("input", (function() {
       if (this.userSearchInput.value && this.userSearchInput.value.length > 2) {
         this.users.clear();
-        this.searchUsersAjax(this.userSearchInput.value);
+        this.searchUsers(this.userSearchInput.value);
       }
       else {
-        this.loadUsersAjax(1);
+        this.loadUsers(1);
       }
     }).bind(this));
 
@@ -107,12 +107,12 @@ class UserWindow {
                      - this.userList.clientHeight;
       if (-1 < scroll && scroll < 1) { 
         if (this.userSearchInput.value && this.userSearchInput.value.length > 2) {
-          this.searchUsersAjax(this.userSearchInput.value,
-                               this.getPageNumber())
+          this.searchUsers(this.userSearchInput.value,
+                           this.getPageNumber())
         }
         else {
-          this.loadUsersAjax(this.getPageNumber(),
-                             false);
+          this.loadUsers(this.getPageNumber(),
+                         false);
         }
       }
     }).bind(this));
@@ -192,36 +192,11 @@ class UserWindow {
     }
   };
 
-  searchUsersAjax(username, pageNumber=1) {
-    let request = new XMLHttpRequest();
-    request.open("POST", "/search_users", true);
-    request.setRequestHeader("Content-Type", JSON_CONTENT_TYPE);
-
-    request.onload = (function() {
-      try {
-        if (request.readyState === request.DONE) {
-          if (request.status === 200) {
-
-            const response = JSON.parse(request.response);
-            const foundUsers = response["found_users"];
-            let clearArea = false;
-            if (foundUsers.length > this.users.size || pageNumber < 2) {
-              clearArea = true;
-            }
-            this.addUsers(foundUsers, clearArea);
-          }
-          else {
-            logFailedAjaxRequest(request);
-          }
-        }
-      }
-      catch(e) {
-        logException(e);
-      }
-    }).bind(this);
-
-    request.send(JSON.stringify({"username": username,
-                                 "page_number": pageNumber}))
+  searchUsers(username, pageNumber=1) {
+    console.log('searching users ' + username)
+    SOCKET.emit("search_users",
+                {"username": username,
+                 "page_number": pageNumber})
   };
 
   setUsers() {
@@ -260,34 +235,10 @@ class UserWindow {
     }
   };
 
-  loadUsersAjax(pageNumber, clearArea=true) {
-    let request = new XMLHttpRequest();
-    request.open("POST", "/load_users", true);
-    request.setRequestHeader("Content-Type", JSON_CONTENT_TYPE);
-
-    request.onload = (function() {
-      try {
-        if (request.readyState === request.DONE) {
-          if (request.status === 200) {
-            const response = JSON.parse(request.response)
-            const addedUsers = response["added_users"];
-            if (addedUsers.length > this.users.size) {
-              clearArea = true;
-            }
-            this.addUsers(addedUsers, clearArea);
-          }
-          else {
-            logFailedAjaxRequest(request);
-          }
-        }
-      }
-      catch(e) {
-        logFailedAjaxRequest(e);
-      }
-
-    }).bind(this);
-
-    request.send(JSON.stringify({"page_number": pageNumber}));
+  loadUsers(pageNumber, clearArea=true) {
+    SOCKET.emit("load_users",
+                {"page_number": pageNumber,
+                 "clear_area": clearArea});
   };
 };
 
@@ -339,8 +290,8 @@ class ChatWindow {
                      - this.chatList.clientHeight;
       if (-1 < scroll && scroll < 1) { 
         if (this.chatSearchInput.value && this.chatSearchInput.value.length > 2) {
-              this.searchChatsAjax(this.chatSearchInput.value,
-                                   this.getPageNumber())
+              this.searchChats(this.chatSearchInput.value,
+                               this.getPageNumber())
         }
         else {
           this.loadChats(this.getPageNumber());
@@ -352,7 +303,7 @@ class ChatWindow {
     .chatSearchInput.addEventListener("input", (function () {
       if (this.chatSearchInput.value && this.chatSearchInput.value.length > 2) {
         this.chats.clear();
-        this.searchChatsAjax(this.chatSearchInput.value);
+        this.searchChats(this.chatSearchInput.value);
       }
       else {
         this.loadChats();
@@ -447,34 +398,6 @@ class ChatWindow {
     SOCKET.emit("choose_chat", {chat_id: chatId});
   };
 
-
-  chooseChatAjax(chatId) {
-    let request = new XMLHttpRequest();
-    request.open("POST", "/choose_chat", true);
-    request.setRequestHeader("Content-Type", JSON_CONTENT_TYPE);
-
-    request.onload = (function() {
-        try {
-            if (request.readyState === request.DONE) {
-              if (request.status === 200) {
-                const response = JSON.parse(request.response);
-                const messages = response["messages"];
-                const chatName = response["chat_name"];
-                const currentUsername = response["current_username"];
-                this.chooseChatItem(currentUsername, chatName, 
-                                    chatId, messages);
-              } else {
-                logFailedAjaxRequest(request);
-              }
-            }
-          }
-          catch(e) {
-            logException(e);
-          }
-    }).bind(this);
-    request.send(JSON.stringify({"chat_id": chatId}));
-  };
-
   addChat(chatName, chatId) {
     if (!this.chats.has(chatId)) {
       let listItem = document.createElement("li");
@@ -557,7 +480,6 @@ class MessageWindow {
     this.sendMessageButton.addEventListener("click", (function(){
         if (this.chatWindowReference.selectedChatId) {
           const messageText = this.messageField.value;
-          console.log('message text' + messageText);
           this.sendMessage(this.chatWindowReference.selectedChatId, 
                            messageText);
         }
@@ -567,6 +489,12 @@ class MessageWindow {
     }).bind(this));
     
   }
+
+  loadMessages(chatId) {
+    SOCKET.emit("load_messages",
+                {"chat_id": chatId})
+  };
+
 
   setChatHeader(header) {
     this.chatHeader.innerText = header;
@@ -615,76 +543,10 @@ class MessageWindow {
     }
   };
 
-  loadMessagesAjax(currentChatId) {
-    let request = new XMLHttpRequest();
-    request.open("POST", "/load_messages", true);
-    request.setRequestHeader("Content-Type", JSON_CONTENT_TYPE);
-
-    request.onload = (function() {
-      try {
-          if (request.readyState === request.DONE) {
-            if (request.status === 200) {
-              const response = JSON.parse(request.response);
-              const messages = response["messages"];
-              const currentUsername = response["current_username"];
-              this.addMessages(currentUsername,
-                               messages);
-            } else {
-              logFailedAjaxRequest(request);
-            }
-          }
-        }
-        catch(e) {
-          logException(e);
-        }
-    }).bind(this);
-
-    const data = {
-                   chat_id: currentChatId
-                 };
-    request.send(JSON.stringify(data));
-  }
-
   sendMessage(chatId, messageText) {
     const text = messageText.trim();
     if (text) {
       SOCKET.emit("send_message", {chat_id: chatId, message_text: text});
-    }
-  };
-
-
-  sendMessageAjax(chatId, messageText){
-    const text = messageText.trim();
-    if (text) {
-      let request = new XMLHttpRequest();
-      request.open("POST", "/send_message", true);
-      request.setRequestHeader("Content-Type", JSON_CONTENT_TYPE);
-
-      request.onload = (function(){
-          try {
-              if (request.readyState === request.DONE) {
-                if (request.status === 200) {
-
-                    const response = JSON.parse(request.response);
-                    const message = response["message"];
-                    const currentUsername = response["current_username"];
-                    this.messageField.value = "";
-                    this.addMessage(currentUsername, message);
-                } else {
-                    logFailedAjaxRequest(request);
-                }
-              }
-            }
-            catch(e) {
-              logException(e);
-            }
-      }).bind(this);
-
-      const data = {
-                    message: text,
-                    chat_id: chatId
-                  };
-      request.send(JSON.stringify(data));
     }
   };
 
@@ -760,6 +622,29 @@ let SOCKET = io.connect('http://' + document.domain + ':' + location.port);
 
 window
 .addEventListener("load", function() {
+    SOCKET.on("load_messages", function(response) {
+      const messages = response["messages"];
+      const currentUsername = response["current_username"];
+      messageWindow.addMessages(currentUsername,
+                                messages);
+    });
+    SOCKET.on("search_users", function(response) {
+      const foundUsers = response["found_users"];
+      const pageNumber = response["page_number"];
+      let clearArea = false;
+      if (foundUsers.length > userWindow.users.size || pageNumber < 2) {
+        clearArea = true;
+      }
+      userWindow.addUsers(foundUsers, clearArea);
+    });
+    SOCKET.on("load_users", function(response) {
+      const addedUsers = response["added_users"];
+      let clearArea = response["clear_area"];
+      if (addedUsers.length > userWindow.users.size) {
+        clearArea = true;
+      }
+      userWindow.addUsers(addedUsers, clearArea);
+    });
     SOCKET.on("search_chats", function(response) {
       const foundChats = response["found_chats"];
       const pageNumber = response["page_number"];
@@ -767,7 +652,7 @@ window
       if (pageNumber < 2) {
         clearArea = true;
       }
-      this.addChats(foundChats, clearArea);
+      chatWindow.addChats(foundChats, clearArea);
     });
     SOCKET.on("load_chats", function(response) {
       let clearArea = false;
@@ -830,6 +715,7 @@ window
     });
 
     messageWindow.scrollDown();
+
     try {
       chatWindow
       .selectedChatId = document
@@ -840,8 +726,7 @@ window
     }
     if (chatWindow.selectedChatId 
         && chatWindow.chats.has(chatWindow.selectedChatId)) {
-        
             chatWindow.showRemoveChatButton();
-            messageWindow.loadMessagesAjax(chatWindow.selectedChatId);
+            messageWindow.loadMessages(chatWindow.selectedChatId);
     }
 });

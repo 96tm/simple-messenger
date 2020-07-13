@@ -1,6 +1,6 @@
 from flask import g, jsonify
 from flask_httpauth import HTTPBasicAuth
-from ..models import AnonymousUser, User
+from ..models import User
 from . import errors
 from . import api
 
