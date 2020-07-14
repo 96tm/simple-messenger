@@ -10,8 +10,6 @@
 
     {% block styles %}
         <link rel="stylesheet" 
-              href="{{ url_for('static', filename='css/base.css') }}">
-        <link rel="stylesheet" 
               href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" 
               integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" 
               crossorigin="anonymous">
@@ -62,7 +60,7 @@
 </head>
 
 <body>
-    <div class="container">
+    <div class="wrapper flex-column">
         <div class="flashed-messages">
             {% block flashed_messages %}
                 {% for message in get_flashed_messages() %}
@@ -75,34 +73,26 @@
                 {% endfor %}
             {% endblock %}
         </div>
-    
-        {% block page_content %}
+        <div class="body-container container-fluid flex flex-column">
+            {% block page_content %}
+            {% endblock %}
+        </div>
+
+        {% block footer %}
+            <footer class="footer text-center
+                            {%block footer_class%} 
+                                py-4 bg-dark text-white-50 
+                            {%endblock%}">
+                <small>
+                    Favicon made by 
+                    <a href="https://www.flaticon.com/authors/freepik" 
+                        title="Freepik">Freepik</a> from 
+                        <a href="https://www.flaticon.com/" 
+                            title="Flaticon"> www.flaticon.com</a>
+                </small>
+            </footer>
         {% endblock %}
-
-        
     </div>
-
-    {% block footer %}
-        <footer class="footer text-center
-                        {%block footer_class%} 
-                            py-4 bg-dark text-white-50 
-                        {%endblock%}">
-            <small>
-                Favicon made by 
-                <a href="https://www.flaticon.com/authors/freepik" 
-                    title="Freepik">Freepik</a> from 
-                    <a href="https://www.flaticon.com/" 
-                        title="Flaticon"> www.flaticon.com</a>
-            </small>
-            <br>
-            <small>
-                Mail icon taken from 
-                <a href="http://www.clker.com/clipart-26776.html">
-                    clker.com
-                </a>
-            </small>
-        </footer>
-    {% endblock %}
 </body>
 {% block scripts %}
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.slim.js"></script>

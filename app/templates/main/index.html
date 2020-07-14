@@ -12,12 +12,11 @@
 
 {% block page_content %}
 {% if current_user.is_authenticated %}
-    <div class="row">
+    <div class="row justify-content-center">
       <!-- User search-->
-      <div class="user-window 
-                  col-lg-3
-                  card card-body flex-column mb-5 mb-lg-0
-                  center-from-left">
+      <div class="user-window container
+                  col-3
+                  card card-body flex-column">
             <h5 class="card-title text-muted 
                        text-uppercase text-center">
               Find users
@@ -47,11 +46,10 @@
       </div>
       <!-- Chats -->
       <div class="chat-window 
-                  col-lg-3 
-                  card card-body flex-column mb-5 mb-lg-0
-                  center-from-right">
+                  col-3 
+                  card card-body flex-column">
           <h5 class="card-title text-muted 
-                      text-uppercase text-center">
+                     text-uppercase text-center">
             Your chats
           </h5>
           {{chat_search_form.search_field()}}
@@ -88,33 +86,34 @@
       </div>
       <!-- Message window -->
       <div class="message-window 
-                  col-lg-6
-                  card card-body 
+                  card card-body flex-column
                   {% if not current_chat_id %}
-                  hidden-element
+                    hidden-element
                   {% endif %}">
-        <!-- <div class="card">
-          <div class="card-body"> -->
             <h5 class="chat-header 
                        card-title text-muted text-uppercase text-center">
             {% if current_chat_name %} {{current_chat_name}} {% endif %}
             </h5>
+            <div class="message-area-wrapper">
               <div class="message-area scrollbar-dark">
               </div>
-            <hr>
+              <hr>
               <div class="message-field-window">
                 {{message_form.message_field()}}
               </div>
-            <button class="send-message 
-                           btn btn-block 
-                           btn-primary text-uppercase">
-                Send message
-            </button>
+            </div>
+            <div class="mt-auto">
+              <button class="send-message 
+                            btn btn-block 
+                            btn-primary text-uppercase">
+                  Send message
+              </button>
+            </div>
           </div>
-        <!-- </div>
-      </div> -->
     </div>
 {% endif %}
+
+
 {% endblock %}
 
 {% block scripts %}

@@ -55,19 +55,6 @@ function createAlert(text) {
 }
 
 
-function logFailedAjaxRequest(request) {
-  console.log("There was a problem with the request.");
-  console.log("Request status: " + request.status);
-  console.log("Response: " + JSON.parse(request.response));
-}
-
-
-function logException(exception) {
-  console.log("Caught Exception: " + exception.description);
-  console.log("Exception: " + exception);
-}
-
-
 // classes
 class UserWindow {
   constructor(userWindowClass, userListClass, 
@@ -355,7 +342,6 @@ class ChatWindow {
                  "page_number":pageNumber});
   };
 
-
   chooseChatItem(currentUsername, chatName, chatId, messages) {
     let lastSelected = null;
     let lastSelectedId = null;
@@ -386,7 +372,6 @@ class ChatWindow {
         this.messageWindowReference.hide();
         this.selectedChatId = null;
     }
-
     this.messageWindowReference.scrollDown();
   };
   
@@ -563,6 +548,7 @@ class MessageWindow {
   show() {
     this.scrollDown();
     this.messageWindow.style.display = "block";
+    this.messageWindow.style.display = "";
   };
 
   hide() {
@@ -663,17 +649,14 @@ window
         }
       }
     }));
-
     SOCKET.on("remove_chat", function(data) {
       const chatId = data["chat_id"];
       chatWindow.removeChat(chatId);
     });
-    
     SOCKET.on("add_contacts_and_chats", function(data) {
       const addedChats = data["added_chats"];
       chatWindow.addChats(addedChats, false);
     });
-
     SOCKET.on("choose_chat", function(data) {
       const messages = data["messages"];
       const chatName = data["chat_name"];
@@ -682,7 +665,6 @@ window
       chatWindow.chooseChatItem(currentUsername, chatName, 
                                 chatId, messages);
     });
-
     SOCKET.on("send_message", function(data) {
       const message = data["message"];
       const currentUsername = data["current_username"];
