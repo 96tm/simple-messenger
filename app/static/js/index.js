@@ -12,28 +12,22 @@ const USER_PREFIX = "user-";
 const CHAT_PREFIX = "chat-";
 const CURRENT_SELECTED = "selected-current-chat";
 const SELECTED_ELEMENT = "selected-element";
-const CHECK_MESSAGE_INTERVAL = 3000;
-const VISIBLE = "visible";
-const HIDDEN = "hidden";
-const COLLAPSED = "collapse"; 
 
-const USER_WINDOW_ID = "user-window-id";
-const USER_LIST_ID = "user-list-id";
-const USER_SEARCH_ID = "user-search-id";
-const ADD_CONTACT_BUTTON_ID = "add-contacts-id";
+const USER_WINDOW_CLASS = ".user-window";
+const USER_LIST_CLASS = ".user-list";
+const USER_SEARCH_INPUT_CLASS = ".user-search";
+const ADD_CONTACT_BUTTON_CLASS = ".add-contacts";
 
-const CHAT_WINDOW_ID = "chat-window-id";
-const CHAT_UPDATED = "updated-chat";
-const CHAT_LIST_ID = "chat-list-id";
-const CHAT_SEARCH_INPUT_ID = "chat-search-id";
-const REMOVE_CHAT_BUTTON_ID = "remove-selected-chat-id";
+const CHAT_WINDOW_CLASS = ".chat-window";
+const CHAT_LIST_CLASS = ".chat-list";
+const CHAT_SEARCH_INPUT_CLASS = ".chat-search";
+const REMOVE_CHAT_BUTTON_CLASS = ".remove-selected-chat";
 
-const MESSAGE_WINDOW_ID = "message-window-id";
-const CHAT_HEADER_ID = "chat-header-id";
-const MESSAGE_AREA_ID = "message-area-id";
-const MESSAGE_FIELD_ID ="message-field-id";
-const MESSAGE_CLASS = "message";
-const SEND_MESSAGE_BUTTON_ID = "send-message-button-id";
+const MESSAGE_WINDOW_CLASS = ".message-window";
+const CHAT_HEADER_CLASS = ".chat-header";
+const MESSAGE_AREA_CLASS = ".message-area";
+const MESSAGE_FIELD_CLASS =".message-field";
+const SEND_MESSAGE_BUTTON_CLASS = ".send-message";
 
 const JSON_CONTENT_TYPE = "application/json";
 
@@ -76,23 +70,26 @@ function logException(exception) {
 
 // classes
 class UserWindow {
-  constructor(userWindowId, userListId, addContactButtonId, userSearchId) {
+  constructor(userWindowClass, userListClass, 
+              addContactButtonClass, userSearchInputClass) {
     this.USER_PREFIX = "user-";
     this.LIST_ITEM_CLASS = "list-group-item";
     this.USERS_PER_PAGE = 10;
     this.users = new Set();
-    this.userSearchInput = document.getElementById(userSearchId);
-    this.userWindow = document.getElementById(userWindowId);
-    this.userList = document.getElementById(userListId);
+    this.userSearchInput = document.querySelector(userSearchInputClass);
+    this.userWindow = document.querySelector(userWindowClass);
+    this.userList = document.querySelector(userListClass);
+    this.addContactButton = document.querySelector(addContactButtonClass);
     this.selectedUsers = new Set();
-    this.addContactButton = document.getElementById(addContactButtonId);
     this.messageWindowReference = null;
     this.chatWindowReference = null;
     this.userTrie = null;
     this.setUsers();
 
     this.userSearchInput.addEventListener("input", (function() {
-      if (this.userSearchInput.value && this.userSearchInput.value.length > 2) {
+      if (this.userSearchInput.value 
+          && this.userSearchInput.value.length > 2) {
+        
         this.users.clear();
         this.searchUsers(this.userSearchInput.value);
       }
@@ -106,7 +103,9 @@ class UserWindow {
                      - this.userList.scrollTop
                      - this.userList.clientHeight;
       if (-1 < scroll && scroll < 1) { 
-        if (this.userSearchInput.value && this.userSearchInput.value.length > 2) {
+        if (this.userSearchInput.value 
+            && this.userSearchInput.value.length > 2) {
+          
           this.searchUsers(this.userSearchInput.value,
                            this.getPageNumber())
         }
@@ -193,7 +192,6 @@ class UserWindow {
   };
 
   searchUsers(username, pageNumber=1) {
-    console.log('searching users ' + username)
     SOCKET.emit("search_users",
                 {"username": username,
                  "page_number": pageNumber})
@@ -244,20 +242,20 @@ class UserWindow {
 
 
 class ChatWindow {
-  constructor(chatWindowId, 
-              chatListId,
-              removeChatButtonId,
-              chatSearchInputId) {
+  constructor(chatWindowClass, 
+              chatListClass,
+              removeChatButtonClass,
+              chatSearchInputClass) {
     this.CHAT_PREFIX = "chat-";
     this.LIST_ITEM_CLASS = "list-group-item";
     this.CHATS_PER_PAGE = 10;
     this.MESSAGES_COUNT_SPAN_CLASS = "badge badge-primary\
                                       badge-pill list-group-item-dark";
     this.chats = new Set();
-    this.chatSearchInput = document.getElementById(chatSearchInputId);
-    this.chatWindow = document.getElementById(chatWindowId);
-    this.chatList = document.getElementById(chatListId);
-    this.removeChatButton = document.getElementById(removeChatButtonId);
+    this.chatSearchInput = document.querySelector(chatSearchInputClass);
+    this.chatWindow = document.querySelector(chatWindowClass);
+    this.chatList = document.querySelector(chatListClass);
+    this.removeChatButton = document.querySelector(removeChatButtonClass);
     this.selectedChatId = null;
     this.messageWindowReference = null;
     this.userWindowReference = null;
@@ -289,9 +287,11 @@ class ChatWindow {
                      - this.chatList.scrollTop
                      - this.chatList.clientHeight;
       if (-1 < scroll && scroll < 1) { 
-        if (this.chatSearchInput.value && this.chatSearchInput.value.length > 2) {
-              this.searchChats(this.chatSearchInput.value,
-                               this.getPageNumber())
+        if (this.chatSearchInput.value 
+            && this.chatSearchInput.value.length > 2) {
+          
+          this.searchChats(this.chatSearchInput.value,
+                           this.getPageNumber())
         }
         else {
           this.loadChats(this.getPageNumber());
@@ -301,7 +301,9 @@ class ChatWindow {
 
     this
     .chatSearchInput.addEventListener("input", (function () {
-      if (this.chatSearchInput.value && this.chatSearchInput.value.length > 2) {
+      if (this.chatSearchInput.value 
+          && this.chatSearchInput.value.length > 2) {
+        
         this.chats.clear();
         this.searchChats(this.chatSearchInput.value);
       }
@@ -330,8 +332,6 @@ class ChatWindow {
     let chatItem = document.getElementById(CHAT_PREFIX + chatId);
     let chatNameSpan = document.querySelector("#" + chatItem.id + " span");
     let messagesCountSpan = chatNameSpan.nextElementSibling;
-    console.log('first' + chatNameSpan);
-    console.log('second' + messagesCountSpan);
     if (messagesCountSpan) {
       chatItem.removeChild(messagesCountSpan);
     }
@@ -464,16 +464,17 @@ class ChatWindow {
 
 
 class MessageWindow {
-  constructor(messageWindowId, messageAreaId,
-              messageFieldId, sendMessageButtonId, chatHeaderId) {
+  constructor(messageWindowClass, 
+              messageAreaClass, messageFieldClass, 
+              sendMessageButtonClass, chatHeaderClass) {
     this.COLUMN_3 = "col-lg-3";
     this.CENTER_FROM_LEFT = "center-from-left";
     this.CENTER_FROM_RIGHT = "center-from-right";
-    this.messageWindow = document.getElementById(messageWindowId);
-    this.chatHeader = document.getElementById(chatHeaderId);
-    this.messageArea =  document.getElementById(messageAreaId);
-    this.messageField = document.getElementById(messageFieldId);
-    this.sendMessageButton = document.getElementById(sendMessageButtonId);
+    this.messageWindow = document.querySelector(messageWindowClass);
+    this.chatHeader = document.querySelector(chatHeaderClass);
+    this.messageArea =  document.querySelector(messageAreaClass);
+    this.messageField = document.querySelector(messageFieldClass);
+    this.sendMessageButton = document.querySelector(sendMessageButtonClass);
     this.chatWindowReference = null;
     this.userWindowReference = null;
 
@@ -597,17 +598,19 @@ class MessageWindow {
 driver
 -----------------*/
 
-let messageWindow = new MessageWindow(MESSAGE_WINDOW_ID, 
-                                      MESSAGE_AREA_ID, MESSAGE_FIELD_ID,
-                                      SEND_MESSAGE_BUTTON_ID, CHAT_HEADER_ID);
-let userWindow = new UserWindow(USER_WINDOW_ID,
-                                USER_LIST_ID,
-                                ADD_CONTACT_BUTTON_ID,
-                                USER_SEARCH_ID);
-let chatWindow = new ChatWindow(CHAT_WINDOW_ID,
-                                CHAT_LIST_ID,
-                                REMOVE_CHAT_BUTTON_ID,
-                                CHAT_SEARCH_INPUT_ID);
+let messageWindow = new MessageWindow(MESSAGE_WINDOW_CLASS, 
+                                      MESSAGE_AREA_CLASS, 
+                                      MESSAGE_FIELD_CLASS,
+                                      SEND_MESSAGE_BUTTON_CLASS, 
+                                      CHAT_HEADER_CLASS);
+let userWindow = new UserWindow(USER_WINDOW_CLASS,
+                                USER_LIST_CLASS,
+                                ADD_CONTACT_BUTTON_CLASS,
+                                USER_SEARCH_INPUT_CLASS);
+let chatWindow = new ChatWindow(CHAT_WINDOW_CLASS,
+                                CHAT_LIST_CLASS,
+                                REMOVE_CHAT_BUTTON_CLASS,
+                                CHAT_SEARCH_INPUT_CLASS);
 
 messageWindow.setChatWindowReference(chatWindow);
 messageWindow.setUserWindowReference(userWindow);
@@ -664,7 +667,6 @@ window
       chatWindow.addChats(addedChats, clearArea);
     });
     SOCKET.on("chat_updated", (function(message) {
-      console.log('updated')
       const chats = message["chats"];
       for (let chat of chats) {
         const chatId = chat["chat_id"];
@@ -680,7 +682,6 @@ window
           SOCKET.emit("flush_messages", {chat_id: chatId});
         }
         else {
-          console.log('updating' + unreadMessagesCount);
           chatWindow.setChatAsUpdated(chatId, unreadMessagesCount);
         }
       }
@@ -692,13 +693,11 @@ window
     });
     
     SOCKET.on("add_contacts_and_chats", function(data) {
-      console.log('add contacts and chats')
       const addedChats = data["added_chats"];
       chatWindow.addChats(addedChats, false);
     });
 
     SOCKET.on("choose_chat", function(data) {
-      console.log('choosing');
       const messages = data["messages"];
       const chatName = data["chat_name"];
       const currentUsername = data["current_username"];
@@ -719,7 +718,8 @@ window
     try {
       chatWindow
       .selectedChatId = document
-                        .querySelector("." + CURRENT_SELECTED).id.split("-")[1];
+                        .querySelector("." + CURRENT_SELECTED)
+                        .id.split("-")[1];
     }
     catch(e) {
       console.log('No chat selected');

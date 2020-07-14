@@ -14,7 +14,7 @@ from gevent.pool import Pool
 
 
 USER_WEBSOCKET_MAPPING = dict()
-POOL = Pool()
+CHAT_UPDATES_POOL = Pool()
 
 
 @socket_io.on('search_users')
@@ -138,7 +138,7 @@ def remove_chat(data):
 
 @socket_io.on('connect')
 def save_room():
-    global POOL, USER_WEBSOCKET_MAPPING
+    global CHAT_UPDATES_POOL, USER_WEBSOCKET_MAPPING
     if current_user and not current_user.is_anonymous:
         USER_WEBSOCKET_MAPPING[current_user.id] = request.sid
         data = get_updated_chats(current_user)
@@ -147,19 +147,19 @@ def save_room():
                       .spawn(copy_current_request_context(send_update),
                              data=data,
                              sid=request.sid))
-            POOL.add(worker)
+            CHAT_UPDATES_POOL.add(worker)
 
 
 @socket_io.on('disconnect')
 def test_disconnect():
-    global POOL, USER_WEBSOCKET_MAPPING
+    global CHAT_UPDATES_POOL, USER_WEBSOCKET_MAPPING
     if current_user and not current_user.is_anonymous:
         del USER_WEBSOCKET_MAPPING[current_user.id]
 
 
 @socket_io.on('send_message')
 def send_message(data):
-    global POOL
+    global CHAT_UPDATES_POOL
     try:
         message = None
         text = escape(str(data['message_text']).rstrip())
@@ -194,7 +194,7 @@ def send_message(data):
                              .spawn(copy_current_request_context(send_update),
                                     data=data,
                                     sid=sid))
-                    POOL.add(worker)
+                    CHAT_UPDATES_POOL.add(worker)
     except (ValueError, OverflowError):
         abort(404)
     message_dict = {
@@ -280,15 +280,6 @@ def add_contacts_and_chats(data):
         abort(404)
 
 
-@socket_io.on("test")
-def test_t(message):
-    socket_io.emit("test", {'sid': request.sid,
-                            'request_sid': session.get(current_user.id),
-                            'user': current_user.username,
-                            'other_sid': session.get(User.query.filter_by(username='arthur').first().id)},
-                   room=request.sid) 
-
-
 @main.route('/')
 @login_required
 def index():
@@ -316,25 +307,22 @@ def index():
         chat_list.append({'name': name,
                           'chat_id': chat.id,
                           'unread_messages_count': unread_messages_count})
-    messages = None
     current_chat_id = None
     current_chat_name = None
     if session.get('current_chat_id'):
         current_chat_id = session.get('current_chat_id')
     if current_chat_id and Chat.query.get(current_chat_id):
         chat = Chat.query.get_or_404(current_chat_id)
-        messages = current.get_messages(chat)
         current_chat_name = chat.get_name(current)
     return render_template('main/index.html',
                            chats = chat_list,
                            current_chat_id=current_chat_id,
                            current_chat_name=current_chat_name,
-                           messages=messages,
                            message_form = MessageForm(),
                            chat_search_form=ChatSearchForm(),
                            user_search_form=UserSearchForm(),
                            users = users,
-                           )
+                          )
 
 
 def get_updated_chats(user):
