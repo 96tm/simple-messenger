@@ -6,7 +6,8 @@
 
 {% block styles %}
   {{ super() }}
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}">
+  <link rel="stylesheet" 
+        href="{{ url_for('static', filename='css/login.css') }}">
 {% endblock %}
 
 {% block flashed_messages %}
@@ -15,7 +16,11 @@
         {% for field in form %}
             {% for field_error in field.errors %}
                 <div class="alert alert-warning">
-                    <button type="button" class="close" data-dismiss="alert">&times;</button>
+                    <button class="close" 
+                            type="button" 
+                            data-dismiss="alert">
+                              &times;
+                    </button>
                     {{ field_error }}
                 </div>
             {% endfor %}
@@ -24,40 +29,49 @@
 {% endblock %}
 
 {% block page_content %}
-<div class="container">
-    <div class="row">
-      <div class="col-sm-9 col-md-7 col-lg-5 mx-auto">
+    <div class="row align-items-center">
+      <div class="col col-sm-9 col-md-7 col-lg-5 mx-auto">
         <div id="login-form-container" class="card card-signin my-5">
           <div class="card-body">
             <h5 class="card-title text-center">Log in</h5>
 
-            <form class="form-signin" method="POST" action="{{ url_for('auth.login') }}" role="form">
+            <form class="form-signin" 
+                  method="POST" 
+                  action="{{ url_for('auth.login') }}" 
+                  role="form">
                 
                 {{ form.hidden_tag() }}
                 
                 <div class="form-label-group">
-                    {{ form.email(class="form-control") }}
+                    {{ form.email() }}
                     {{ form.email.label}}
                 </div>
 
                 <div class="form-label-group">
-                    {{ form.password(class="form-control") }}
+                    {{ form.password() }}
                     {{ form.password.label }}
                 </div>
 
                 <div class="custom-control custom-checkbox mb-3">
-                  {{ form.remember_me(class="custom-control-input")}}
+                  {{ form.remember_me()}}
                   {{ form.remember_me.label(class="custom-control-label") }}
                 </div>
 
-                {{ form.submit(class="btn btn-lg btn-primary btn-block text-uppercase")}}
+                {{ form.submit()}}
                 
-                <a href="{{ url_for('auth.signup') }}" class="btn btn-lg btn-primary btn-block text-uppercase">Sign Up</a>
+                <a href="{{ url_for('auth.signup') }}" 
+                   class="btn btn-lg btn-primary btn-block text-uppercase">
+                    Sign Up
+                </a>
             </form>
 
           </div>
         </div>
       </div>
     </div>
-  </div>
+{% endblock %}
+
+{% block footer_class %}
+    {{super()}}
+    fixed-bottom
 {% endblock %}

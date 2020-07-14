@@ -467,9 +467,6 @@ class MessageWindow {
   constructor(messageWindowClass, 
               messageAreaClass, messageFieldClass, 
               sendMessageButtonClass, chatHeaderClass) {
-    this.COLUMN_3 = "col-lg-3";
-    this.CENTER_FROM_LEFT = "center-from-left";
-    this.CENTER_FROM_RIGHT = "center-from-right";
     this.messageWindow = document.querySelector(messageWindowClass);
     this.chatHeader = document.querySelector(chatHeaderClass);
     this.messageArea =  document.querySelector(messageAreaClass);
@@ -566,31 +563,11 @@ class MessageWindow {
   show() {
     this.scrollDown();
     this.messageWindow.style.display = "block";
-    
-    this
-    .userWindowReference
-    .userWindow
-    .className = this.COLUMN_3;
-    
-    this
-    .chatWindowReference
-    .chatWindow
-    .className = this.COLUMN_3;
   };
 
   hide() {
     this.messageField.value = "";
     this.messageWindow.style.display = "none";
-
-    this
-    .userWindowReference
-    .userWindow
-    .className = this.COLUMN_3 + " " + this.CENTER_FROM_LEFT;
-
-    this
-    .chatWindowReference
-    .chatWindow
-    .className = this.COLUMN_3 + " " + this.CENTER_FROM_RIGHT;
   };
 }
 

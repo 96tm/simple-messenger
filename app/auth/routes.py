@@ -72,7 +72,9 @@ def signup():
                    'mail/registration_letter',
                    user=user,
                    token=token,
-                   link=url_for('auth.confirm', token=token, _external=True))
+                   link=url_for('auth.confirm', 
+                                token=token, 
+                                _external=True))
         login_user(user, remember=False)
         return redirect(url_for('main.index'))
     return render_template('auth/registration.html', form=form)
@@ -87,7 +89,8 @@ def confirm(token):
         database.session.commit()
         flash('Your account has been confirmed.')
     else:
-        flash('The confirmation link is invalid or has expired. Please sign up again.')
+        flash('The confirmation link is invalid or has expired. '
+              + 'Please sign up again.')
     return redirect(url_for('main.index'))
 
 
@@ -100,6 +103,8 @@ def resend_confirmation():
                'mail/registration_letter',
                user=current_user,
                token=token,
-               link=url_for('auth.confirm', token=token, _external=True))
+               link=url_for('auth.confirm', 
+                            token=token, 
+                            _external=True))
     flash('A new confirmation letter has been sent to ' + current_user.email)
     return redirect(url_for('main.index'))

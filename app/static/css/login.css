@@ -2,11 +2,11 @@
     --input-padding-x: 1.5rem;
     --input-padding-y: .75rem;
   }
-
+/* 
   div #login-form-container {
     margin-top: 1rem !important;
     margin-bottom: 1rem !important;
-  }
+  } */
 
   form.form-signin .btn {
     padding: .5rem 1rem;

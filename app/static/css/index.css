@@ -24,18 +24,18 @@ li.selected-current-chat {
   padding: .375rem .75rem;
 }
 
-.card.mb-5.mb-lg-0{
+/* .card.mb-5.mb-lg-0{
   height: 100%;
-}
+} */
 
 .message-field-window{
   padding-bottom: .5em;
 }
 
-button.remove-selected-chat,
+/* button.remove-selected-chat,
 button.add-contacts{
   margin-top: 3.4em;
-}
+} */
 
 input[type=search]::placeholder {
   font-size: medium;

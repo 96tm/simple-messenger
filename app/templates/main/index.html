@@ -12,16 +12,12 @@
 
 {% block page_content %}
 {% if current_user.is_authenticated %}
-  <div class="container">
     <div class="row">
       <!-- User search-->
       <div class="user-window 
-                  col-lg-3 
-                  {% if not current_chat_id %}
-                    center-from-left
-                  {% endif %}">
-        <div class="card mb-5 mb-lg-0">
-          <div class="card-body">
+                  col-lg-3
+                  card card-body flex-column mb-5 mb-lg-0
+                  center-from-left">
             <h5 class="card-title text-muted 
                        text-uppercase text-center">
               Find users
@@ -41,67 +37,64 @@
               <span>no users found  </span>
               {% endif %}
             </div>
-            <button class="add-contacts 
-                           btn btn-block btn-primary 
-                           text-uppercase hidden-element">
-              Add contacts
-            </button>
+            <div class="mt-auto">
+              <button class="add-contacts 
+                            btn btn-block btn-primary 
+                            text-uppercase hidden-element">
+                Add contacts
+              </button>
           </div>
-        </div>
       </div>
       <!-- Chats -->
       <div class="chat-window 
                   col-lg-3 
-                  {% if not current_chat_id %}
-                    center-from-right
-                  {% endif %}">
-        <div class="card mb-5 mb-lg-0">
-          <div class="card-body">
-            <h5 class="card-title text-muted 
-                       text-uppercase text-center">
-              Your chats
-            </h5>
-            {{chat_search_form.search_field()}}
-            <hr>
-            <div class="chat-list-wrapper">
-              {% if chats %}
-                <ul class="chat-list list-group-flush scrollbar-dark">
-                  {% for chat in chats %}
-                    <li id="chat-{{ chat.chat_id}}"
-                        class="list-group-item
-                              {% if current_chat_id == chat.chat_id %} 
-                                selected-current-chat 
-                              {% endif %}">
-                      <span> {{chat.name}} </span>
-                      {% if chat.unread_messages_count %}
-                        <span class="badge badge-primary badge-pill 
-                                     list-group-item-dark">
-                          {{chat.unread_messages_count}}
-                        </span>
-                      {% endif %}
-                    </li>
-                  {% endfor %}
-                </ul>
-              {% else %}
-                no chats
-              {% endif %}
-
-              <button class="remove-selected-chat 
-                             btn btn-block btn-primary 
-                             text-uppercase 
-                             hidden-element">Remove</button>
-            </div>
+                  card card-body flex-column mb-5 mb-lg-0
+                  center-from-right">
+          <h5 class="card-title text-muted 
+                      text-uppercase text-center">
+            Your chats
+          </h5>
+          {{chat_search_form.search_field()}}
+          <hr>
+          <div class="chat-list-wrapper">
+            {% if chats %}
+              <ul class="chat-list list-group-flush scrollbar-dark">
+                {% for chat in chats %}
+                  <li id="chat-{{ chat.chat_id}}"
+                      class="list-group-item
+                            {% if current_chat_id == chat.chat_id %} 
+                              selected-current-chat 
+                            {% endif %}">
+                    <span> {{chat.name}} </span>
+                    {% if chat.unread_messages_count %}
+                      <span class="badge badge-primary badge-pill 
+                                    list-group-item-dark">
+                        {{chat.unread_messages_count}}
+                      </span>
+                    {% endif %}
+                  </li>
+                {% endfor %}
+              </ul>
+            {% else %}
+              no chats
+            {% endif %}
           </div>
-        </div>
+          <div class="mt-auto">
+            <button class="remove-selected-chat 
+                           btn btn-block btn-primary 
+                           text-uppercase 
+                           hidden-element">Remove</button>
+          </div>
       </div>
       <!-- Message window -->
       <div class="message-window 
                   col-lg-6
+                  card card-body 
                   {% if not current_chat_id %}
-                  hidden-element 
+                  hidden-element
                   {% endif %}">
-        <div class="card">
-          <div class="card-body">
+        <!-- <div class="card">
+          <div class="card-body"> -->
             <h5 class="chat-header 
                        card-title text-muted text-uppercase text-center">
             {% if current_chat_name %} {{current_chat_name}} {% endif %}
@@ -118,10 +111,9 @@
                 Send message
             </button>
           </div>
-        </div>
-      </div>
+        <!-- </div>
+      </div> -->
     </div>
-  </div>
 {% endif %}
 {% endblock %}
 
