@@ -1,12 +1,15 @@
 {% extends 'base.html' %}
 
 {% block title %}
-  SimpleChat - Sign up
+  Simple Messenger - Sign up
 {% endblock %}
 
 {% block styles %}
   {{ super() }}
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}">
+  <link rel="stylesheet" 
+        href="{{ url_for('static', filename='css/forms.css') }}">
+  <link rel="stylesheet" 
+        href="{{ url_for('static', filename='css/registration.css') }}">
 {% endblock %}
 
 {% block flashed_messages %}
@@ -24,7 +27,6 @@
 {% endblock %}
 
 {% block page_content %}
-<div class="container">
     <div class="row">
       <div class="col-sm-9 col-md-7 col-lg-5 mx-auto">
         <div id="login-form-container" class="card card-signin my-5">
@@ -64,10 +66,4 @@
         </div>
       </div>
     </div>
-  </div>
-{% endblock %}
-
-{% block footer_class %}
-    {{super()}}
-    fixed-bottom
 {% endblock %}

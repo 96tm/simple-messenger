@@ -1,12 +1,12 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, TextAreaField
-from wtforms.validators import Required, Length
-from ..models import Message
+from wtforms.validators import Length
 
 
 class MessageForm(FlaskForm):
     kw = {'class': 'message-field',
-          'cols': '38',
+          'width': '100%',
+          'height': '100%',
           'minlength': '1',
           'maxlength': '1000',
           'autofocus': 'autofocus',

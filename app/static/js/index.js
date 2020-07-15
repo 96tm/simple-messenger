@@ -7,7 +7,6 @@
 
 
 // constants
-
 const USER_PREFIX = "user-";
 const CHAT_PREFIX = "chat-";
 const CURRENT_SELECTED = "selected-current-chat";
@@ -36,22 +35,6 @@ const JSON_CONTENT_TYPE = "application/json";
 function format_date(date) {
   const format_string = "MMMM Do YYYY, h:mm:ss a";
   return moment(date).format(format_string);
-}
-
-
-function createAlert(text) {
-  let container = document.getElementById("flashed-messages");
-  let messageDiv = document.createElement("div");
-  messageDiv.className = "alert alert-warning";
-  let closeButton = document.createElement("button");
-  closeButton.className = "close";
-  closeButton.setAttribute("data-dismiss", "alert");
-  closeButton.innerText = "×";
-  messageDiv.appendChild(closeButton);
-  let textElement = document.createElement("span");
-  textElement.innerText = text;
-  messageDiv.appendChild(textElement);
-  container.appendChild(messageDiv);
 }
 
 
@@ -211,15 +194,6 @@ class UserWindow {
     }
   };
   
-  removeUser(userId) {
-    if (this.users.has(userId)) {
-        const listItem = document.getElementById(this.USER_PREFIX + userId);
-        this.userList.removeChild(listItem);
-        this.users.delete(userId);
-        this.selectedUsers.delete(userId);
-    }
-  };
-
   loadUsers(pageNumber, clearArea=true) {
     SOCKET.emit("load_users",
                 {"page_number": pageNumber,
@@ -267,23 +241,6 @@ class ChatWindow {
             this.chooseChat(elementId);
         }
         
-    }).bind(this));
-
-    this.chatList.addEventListener("scroll", (function() {
-      const scroll = this.chatList.scrollHeight 
-                     - this.chatList.scrollTop
-                     - this.chatList.clientHeight;
-      if (-1 < scroll && scroll < 1) { 
-        if (this.chatSearchInput.value 
-            && this.chatSearchInput.value.length > 2) {
-          
-          this.searchChats(this.chatSearchInput.value,
-                           this.getPageNumber())
-        }
-        else {
-          this.loadChats(this.getPageNumber());
-        }
-      }
     }).bind(this));
 
     this
@@ -337,15 +294,17 @@ class ChatWindow {
   };
 
   searchChats(chatName, pageNumber=1) {
+    this.hideRemoveChatButton();
     SOCKET.emit("search_chats",
                 {"chat_name": chatName,
-                 "page_number":pageNumber});
+                 "page_number": pageNumber});
   };
 
   chooseChatItem(currentUsername, chatName, chatId, messages) {
     let lastSelected = null;
     let lastSelectedId = null;
     if (this.selectedChatId) {
+      
       lastSelected = document
                      .getElementById(CHAT_PREFIX + this.selectedChatId);
       lastSelectedId = this.selectedChatId;
@@ -383,7 +342,7 @@ class ChatWindow {
     SOCKET.emit("choose_chat", {chat_id: chatId});
   };
 
-  addChat(chatName, chatId) {
+  addChat(chatName, chatId, clearArea=false) {
     if (!this.chats.has(chatId)) {
       let listItem = document.createElement("li");
       let chatNameSpan = document.createElement("span");
@@ -391,10 +350,16 @@ class ChatWindow {
       listItem.className = this.LIST_ITEM_CLASS;
       if (chatId == this.selectedChatId) {
         listItem.className += " " + CURRENT_SELECTED;
+        this.showRemoveChatButton();
       }
       chatNameSpan.innerText = " " + chatName;
       listItem.appendChild(chatNameSpan);
-      this.chatList.appendChild(listItem);
+      if (clearArea){
+        this.chatList.appendChild(listItem);
+      }
+      else {
+        this.chatList.prepend(listItem);
+      }
       this.chats.add(chatId);
     }
   };
@@ -406,7 +371,8 @@ class ChatWindow {
     }
     for (let chat of addedChats) {
       this.addChat(chat["chat_name"],
-                   chat["chat_id"]);
+                   chat["chat_id"],
+                   clearArea);
     }
     this.userWindowReference.updateAddContactButton();
   };
@@ -478,7 +444,6 @@ class MessageWindow {
                 {"chat_id": chatId})
   };
 
-
   setChatHeader(header) {
     this.chatHeader.innerText = header;
   };
@@ -547,8 +512,7 @@ class MessageWindow {
 
   show() {
     this.scrollDown();
-    this.messageWindow.style.display = "block";
-    this.messageWindow.style.display = "";
+    this.messageWindow.style.display = "flex";
   };
 
   hide() {
@@ -557,10 +521,8 @@ class MessageWindow {
   };
 }
 
-/* ----------------
-driver
------------------*/
 
+// driver
 let messageWindow = new MessageWindow(MESSAGE_WINDOW_CLASS, 
                                       MESSAGE_AREA_CLASS, 
                                       MESSAGE_FIELD_CLASS,

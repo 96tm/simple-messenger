@@ -9,7 +9,8 @@ class LoginForm(FlaskForm):
     email = StringField('Email', 
                          validators=[Required(), Length(1, 64), Email()], 
                          render_kw={'class': 'form-control',
-                                    'placeholder': 'Email'})
+                                    'placeholder': 'Email',
+                                    'type': 'email'})
     password = PasswordField('Password', 
                              validators=[Required(), ],
                              render_kw={'class': 'form-control',
@@ -39,7 +40,8 @@ class RegistrationForm(FlaskForm):
                                      Length(1, 64), 
                                      Email()],
                          render_kw={'class': 'form-control',
-                                    'placeholder': 'Email'})
+                                    'placeholder': 'Email',
+                                    'type': 'email'})
     
     password = PasswordField('Password', 
                              validators=[Required(),

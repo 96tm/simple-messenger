@@ -1,8 +1,8 @@
 import time
 
 from app import create_app, database
-from app.models import Contact, Chat, format_date, Message
-from app.models import User, UserChatTable, Role, Permission
+from app.models import Contact, Chat, Message
+from app.models import User, UserChatTable, RemovedChat, Role, Permission
 from flask import current_app
 import unittest
 
@@ -50,6 +50,45 @@ class UserModelTestCase(unittest.TestCase):
         database.session.remove()
         database.drop_all()
         self.app_context.pop()
+    
+    def test_get_chat_query(self):
+        query = self.bob.get_chat_query([self.clair.id, 
+                                         self.ophelia.id, 
+                                         self.arthur.id])
+        self.assertEqual(query.all(), 
+                         [self.chat_bob_arthur, self.chat_bob_clair])
+    
+    def test_get_removed_chats_query(self):
+        self.bob.mark_chats_as_removed([self.chat_bob_arthur])
+        self.bob.mark_chats_as_removed([self.chat_morgana_bob])
+        self.assertEqual(RemovedChat.query.count(), 2)
+        removed = self.bob.get_removed_chats_query([self.bob.id, 
+                                                    self.clair.id,
+                                                    self.arthur.id, 
+                                                    self.morgana.id])
+        self.assertEqual(set(removed.all()),
+                         set([self.chat_bob_arthur, self.chat_morgana_bob]))
+    
+    def test_mark_chats_as_removed(self):
+        self.bob.mark_chats_as_removed([self.chat_bob_arthur])
+        self.assertEqual(RemovedChat.query.count(), 1)
+        self.assertEqual(RemovedChat.query.first().chat,
+                         self.chat_bob_arthur)
+        self.assertEqual(RemovedChat.query.first().user, self.bob)
+
+    def test_get_removed_query(self):
+        self.bob.mark_chats_as_removed([self.chat_bob_clair,
+                                        self.chat_morgana_bob])
+        query = self.bob.get_removed_query()
+        self.assertIn((RemovedChat
+                       .query
+                       .filter_by(chat_id=self.chat_bob_clair.id)).first(), 
+                      query.all())
+        self.assertIn((RemovedChat
+                       .query
+                       .filter_by(chat_id=self.chat_morgana_bob.id)).first(), 
+                      query.all())
+        self.assertEqual(query.count(), 2)
 
     def test_expired_confirmation_token(self):
         user = User(password='pass', email='user@user.user', username='user')
@@ -219,7 +258,7 @@ class UserModelTestCase(unittest.TestCase):
                          set((Chat
                           .query
                           .filter(Chat.users.contains(self.bob)).all())))
-        Chat.mark_chats_as_removed(self.bob, [self.chat_bob_arthur])
+        self.bob.mark_chats_as_removed([self.chat_bob_arthur])
         chats = self.bob.get_available_chats_query().all()
         self.assertNotEqual(chats,
                             (Chat
@@ -246,19 +285,19 @@ class UserModelTestCase(unittest.TestCase):
         database.session.commit()
         message_dict_1 = {
                             'text':message1.text,
-                            'date_created': message1.date_created,
+                            'date_created': message1.date_created.isoformat(),
                             'sender_username': message1.sender.username,
                             'recipient_username': message1.recipient.username
                          }
         message_dict_2 = {
                             'text':message2.text,
-                            'date_created': message2.date_created,
+                            'date_created': message2.date_created.isoformat(),
                             'sender_username': message2.sender.username,
                             'recipient_username': message2.recipient.username
                          }
         message_dict_3 = {
                             'text':message3.text,
-                            'date_created': message3.date_created,
+                            'date_created': message3.date_created.isoformat(),
                             'sender_username': message3.sender.username,
                             'recipient_username': message3.recipient.username
                          }        
@@ -267,42 +306,27 @@ class UserModelTestCase(unittest.TestCase):
         self.assertIn(message_dict_2, messages)
         self.assertIn(message_dict_3, messages)
         self.assertEqual(len(messages), 3)
-        self.assertTrue(message1.was_read)
-        self.assertTrue(message2.was_read)
-        self.assertTrue(message3.was_read)
 
-    def test_get_unread_messages(self):
-        message1 = Message(text='hi arthur', 
+    def test_get_unread_messages_query(self):
+        message_1 = Message(text='hi arthur', 
                            sender=self.bob, recipient=self.arthur,
                            chat=self.chat_bob_arthur, was_read=True)
-        message2 = Message(text='hi bob', 
+        message_2 = Message(text='hi bob', 
                            sender=self.arthur, recipient=self.bob,
                            chat=self.chat_bob_arthur)
-        message3 = Message(text='what\'s up', 
+        message_3 = Message(text='what\'s up', 
                            sender=self.arthur, recipient=self.bob,
                            chat=self.chat_bob_arthur)
-        message4 = Message(text='see you', 
+        message_4 = Message(text='see you', 
                            sender=self.arthur, recipient=self.bob,
                            chat=self.chat_bob_arthur, was_read=True)
-        database.session.add_all([message1, message2, message3, message4])
-        database.session.commit()
-        message_dict_2 = {
-                            'text':message2.text,
-                            'sender_username': message2.sender.username,
-                            'date_created': message2.date_created.isoformat()
-                         }
-        message_dict_3 = {
-                            'text':message3.text,
-                            'sender_username': message3.sender.username,
-                            'date_created': message3.date_created.isoformat()
-                         }        
-        messages = self.bob.get_unread_messages(self.chat_bob_arthur)
-        self.assertIn(message_dict_2, messages)
-        self.assertIn(message_dict_3, messages)
-        self.assertEqual(len(messages), 2)
-        self.assertTrue(message1.was_read)
-        self.assertTrue(message2.was_read)
-        self.assertTrue(message3.was_read)
+        database.session.add_all([message_1, message_2, 
+                                  message_3, message_4])
+        database.session.commit()  
+        messages = self.bob.get_unread_messages_query(self.chat_bob_arthur)
+        self.assertIn(message_2, messages.all())
+        self.assertIn(message_3, messages.all())
+        self.assertEqual(len(messages.all()), 2)
 
     def test_search_users_query(self):
         other_users_query = self.bob.get_other_users_query()

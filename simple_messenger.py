@@ -1,11 +1,7 @@
-import click
-
 from app import create_app, database, socket_io
 from app.models import UserChatTable, Chat, add_test_data, RemovedChat
 from app.models import User, Role, Contact, Message
 from config import ProductionConfig
-import gevent
-from flask import request
 
 
 app = create_app(ProductionConfig.name)
@@ -28,10 +24,10 @@ def make_shell_context():
             'RemovedChat': RemovedChat,
             'Contact': Contact, 
             'Message': Message,
-            'bob': User.query.filter_by(username='bob').first(),
+            'bob': User.query.filter_by(username='Robert').first(),
             'add_test_data': add_test_data,
-            'arthur': User.query.filter_by(username='arthur').first()}
+            'arthur': User.query.filter_by(username='Arthur').first()}
 
 
 if __name__ == '__main__':
-    socket_io.run(app, debug=True)
+    socket_io.run(app)

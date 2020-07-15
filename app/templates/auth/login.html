@@ -1,11 +1,13 @@
 {% extends 'base.html' %}
 
 {% block title %}
-  SimpleChat - Login
+  Simple Messenger - Login
 {% endblock %}
 
 {% block styles %}
   {{ super() }}
+  <link rel="stylesheet" 
+        href="{{ url_for('static', filename='css/forms.css') }}">
   <link rel="stylesheet" 
         href="{{ url_for('static', filename='css/login.css') }}">
 {% endblock %}

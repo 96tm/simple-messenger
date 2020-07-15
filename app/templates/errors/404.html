@@ -1,16 +1,8 @@
-{% extends "base.html" %}
+{% extends "errors/base_error.html" %}
 
-{% block title %}SimpleMessenger - Page Not Found{% endblock %}
+{% block title %}Simple Messenger - Page Not Found {% endblock %}
 
-{% block page_content %}
-<div class="page-header">
-    <div class="error-message">
-        <h1>Page not found</h1>
-    </div>
-</div>
+{% block error_message %}
+  Page not found
 {% endblock %}
 
-{% block footer_class %}
-    {{super()}}
-    fixed-bottom
-{% endblock %}

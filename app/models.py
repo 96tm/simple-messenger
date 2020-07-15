@@ -4,7 +4,6 @@ from .exceptions import ValidationError
 from datetime import datetime, timezone
 from itsdangerous import BadHeader, SignatureExpired
 from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
-from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy import and_, not_
 from flask import current_app, url_for
@@ -26,7 +25,7 @@ def load_user(user_id):
 
 def format_date(date):
     """
-    Return string representation of given date.
+    Return a string representation of the given date.
 
     :param date: DateTime instance
     :returns: string
@@ -37,29 +36,87 @@ def format_date(date):
 
 def add_test_data():
     """
-    Load data to database
+    Load data to the database
     for testing purposes.
     """
     database.create_all()
-    bob = User(username='bob', email='bob@bob.bob', 
+    bob = User(username='Robert', email='bob@bob.bob', 
                password='bob', confirmed=True)
-    arthur = User(username='arthur', email='arthur@arthur.arthur',
+    arthur = User(username='Arthur', email='arthur@arthur.arthur',
                   password='arthur', confirmed=True)
-    morgana = User(username='morgana', email='morgana@morgana.morgana',
-                   password='morgana', confirmed=True)
-    clair = User(username='clair', email='clair@clair.clair',
+    morgain = User(username='Morgain', email='morgain@morgain.morgain',
+                   password='morgain', confirmed=True)
+    clair = User(username='Clair', email='clair@clair.clair',
                  password='clair', confirmed=True)
-    merlin = User(username='merlin', email='merlin@merlin.merlin',
+    merlin = User(username='Merlin', email='merlin@merlin.merlin',
                   password='merlin', confirmed=True)
-    ophelia = User(username='ophelia', email='ophelia@ophelia.ophelia',
+    ophelia = User(username='Ophelia', email='ophelia@ophelia.ophelia',
                    password='ophelia', confirmed=True)
-    database.session.add_all([bob, arthur, morgana, clair, merlin, ophelia])
+    lancelot = User(username='Lancelot', email='lancelot@lancelot.lancelot',
+                    password='lancelot', confirmed=True)
+    guinevere = User(username='Guinevere', 
+                     email='guinevere@guinevere.guinevere',
+                     password='guinevere', confirmed=True)
+    guinevere = User(username='Uther', 
+                     email='uther@uther.uther',
+                     password='uther', confirmed=True)
+    mordred = User(username='Mordred', 
+                   email='mordred@mordred.mordred',
+                   password='mordred', confirmed=True)
+    percival = User(username='Percival', 
+                    email='percival@percival.percival',
+                    password='percival', confirmed=True)
+    dinadan = User(username='Dinadan', 
+                   email='dinadan@dinadan.dinadan',
+                   password='dinadan', confirmed=True)
+    gingalain = User(username='Gingalain', 
+                     email='gingalain@gingalain.gingalain',
+                     password='gingalain', confirmed=True)
+    galahad = User(username='Galahad', 
+                   email='galahad@galahad.galahad',
+                   password='galahad', confirmed=True)
+    pelleas = User(username='Pelleas', 
+                   email='pelleas@pelleas.pelleas',
+                   password='pelleas', confirmed=True)
+    pellinore = User(username='Pellinore', 
+                     email='pellinore@pellinore.pellinore',
+                     password='pellinore', confirmed=True)
+    tristan = User(username='Tristan', 
+                   email='tristan@tristan.tristan',
+                   password='tristan', confirmed=True)
+    branor = User(username='Branor', 
+                  email='branor@branor.branor',
+                  password='branor', confirmed=True)
+    accolon = User(username='Accolon', 
+                   email='accolon@accolon.accolon',
+                   password='accolon', confirmed=True)
+    blanchefleur = User(username='Blanchefleur', 
+                        email='blanchefleur@blanchefleur.blanchefleur',
+                        password='blanchefleur', confirmed=True)
+    brangaine = User(username='Brangaine', 
+                     email='brangaine@brangaine.brangaine',
+                     password='brangaine', confirmed=True)
+    cailia = User(username='Caelia', 
+                  email='caelia@caelia.caelia',
+                  password='caelia', confirmed=True)
+    dindrane = User(username='Dindrane', 
+                    email='dindrane@dindrane.dindrane',
+                    password='dindrane', confirmed=True)
+    enide = User(username='Enide', 
+                 email='enide@enide.enide',
+                 password='enide', confirmed=True)
+
+    database.session.add_all([bob, arthur, morgain, clair, merlin, ophelia,
+                              lancelot, guinevere, mordred, percival,
+                              dinadan, gingalain, galahad, pelleas,
+                              pellinore, tristan, branor, accolon, cailia,
+                              blanchefleur, brangaine, dindrane, enide])
     chat0 = Chat()
     chat0.add_users([bob, arthur])
     chat1 = Chat()
     chat1.add_users([bob, clair])
     chat2 = Chat()
-    chat2.add_users([arthur, morgana])
+    chat2.add_users([arthur, morgain])
     database.session.add_all([chat0, chat1, chat2])
     database.session.commit()
 
@@ -124,12 +181,12 @@ class Role(database.Model):
 
     # TODO
     # change admin permissions to the disjunction of all the available
-    # permissions in future
+    # permissions
     
     @staticmethod
     def insert_roles(roles=None):
         """
-        Insert given roles to database.
+        Insert the given roles to the database.
         Insert a default set of roles if
         called with no parameters.
 
@@ -218,7 +275,7 @@ class Chat(database.Model):
     id = database.Column(database.Integer, primary_key=True)
     name = database.Column(database.String(64))
     is_group_chat = database.Column(database.Boolean, default=False)
-    _date_created = database.Column(database.DateTime(timezone=True), 
+    _date_created = database.Column(database.DateTime(timezone=True),
                                     default=utc_now)
     _date_modified = database.Column(database.DateTime(timezone=True),
                                      default=utc_now,
@@ -254,7 +311,7 @@ class Chat(database.Model):
     
     def to_json(self, user):
         """
-        Return JSON representation
+        Return a JSON representation
         of current chat.
 
         :param user: current user (needed to get chat name)
@@ -274,8 +331,8 @@ class Chat(database.Model):
         """
         Return current chat's 'name' if present,
         otherwise return 'username'
-        of first user of current chat's 'users' attribute
-        which is not equal to given user's username.
+        of the first user of current chat's 'users' attribute
+        which is not equal to the given user's username.
 
         :param user: User model instance
         :returns: string
@@ -290,7 +347,7 @@ class Chat(database.Model):
 
     def add_users(self, users):
         """
-        Add given users to current chat.
+        Add the given users to current chat.
 
         :param users: sequence of User model instances
         """
@@ -301,7 +358,7 @@ class Chat(database.Model):
     
     def remove_users(self, users):
         """
-        Delete given users from current chat.
+        Delete the given users from current chat.
 
         :param users: sequence of User model instances
         """
@@ -312,8 +369,8 @@ class Chat(database.Model):
     @staticmethod
     def from_json(json_chat, current_user):
         """
-        Return Chat model instance
-        created from dictionary.
+        Return a Chat model instance
+        created from the given json_chat dictionary.
 
         :param json_chat: dictionary
         :param current_user: current user (needed to get chat name)
@@ -335,12 +392,12 @@ class Chat(database.Model):
     @staticmethod
     def search_chats_query(chat_name, user):
         """
-        Return query of chats
+        Return a query of chats
         where each chat either:
-        - contains given chat_name in 'name' column;
+        - contains the given chat_name in 'name' column;
         - has only two users ('is_group_chat' is False and 'name' is None),
-          and the user with 'username' != given user's 'username'
-          contains given chat_name in 'username'.
+          and the user with 'username' not equal to (the given user).username
+          contains the given chat_name in 'username'.
 
         :param chat_name: string to search for
         :param user: user whose 'username' is excluded from search,
@@ -361,7 +418,7 @@ class Chat(database.Model):
                             .filter(User.username != user.username,
                                     User
                                     .username
-                                    .like('%' + chat_name + '%'))
+                                    .ilike('%' + chat_name + '%'))
                             .subquery())
         subquery_current_chats = (database
                                  .session
@@ -393,13 +450,13 @@ class Chat(database.Model):
                 .session
                 .query(Chat)
                 .filter(Chat.users.contains(user),
-                        Chat.name.like('%' + chat_name + '%'))
+                        Chat.name.ilike('%' + chat_name + '%'))
                 .union(chats))
 
     @classmethod
     def get_chat(cls, users):
         """
-        Return chat of users in given sequence.
+        Return the chat of users in the given sequence.
 
         :param user: sequence of User model instances
         :returns: Chat model instance
@@ -413,7 +470,6 @@ class User(UserMixin, database.Model):
     """
     User model. Implements UserMixin, 
     used as a default authentication model by Flask-Login.
-
 
     Methods defined here:
 
@@ -550,7 +606,7 @@ class User(UserMixin, database.Model):
     @password.setter
     def password(self, password):
         """
-        Assign given password to current user.
+        Assign the given password to current user.
 
         :param password: string
         """
@@ -558,7 +614,7 @@ class User(UserMixin, database.Model):
 
     def get_chat_query(self, user_ids):
         """
-        Return a query the current user's chats 
+        Return a query of current user's chats 
         with users identified by the given user_ids.
         
         :param user_ids: sequence of integers
@@ -576,10 +632,9 @@ class User(UserMixin, database.Model):
 
     def get_removed_query(self, chat_query=None):
         """
-        Return RemovedChat query for the given user
+        Return RemovedChat query for currrent user
         (based on the chat query, if given).
 
-        :param user: User model instance
         :param chat_query: Chat model query
         :returns: RemovedChat model query
         """
@@ -605,7 +660,7 @@ class User(UserMixin, database.Model):
         Return a query of chats 
         with users having
         the given user_ids
-        which are marked as removed by the current user.
+        which are marked as removed by current user.
         
         :param user_ids: sequence of integers
         :returns: Chat model query
@@ -622,7 +677,6 @@ class User(UserMixin, database.Model):
                             )
                        )
                  )
-        # removed_chat_query.delete(synchronize_session='fetch')
         return result
     
     def mark_chats_as_removed(self, chats):
@@ -655,7 +709,7 @@ class User(UserMixin, database.Model):
     
     def has_permission(self, permission):
         """
-        Check if current user has given permission.
+        Check if current user has the given permission.
 
         :param permission: integer representing permission
         :returns: True if current user has a role
@@ -668,7 +722,7 @@ class User(UserMixin, database.Model):
     
     def verify_password(self, password):
         """
-        Check if given password matches current user's password.
+        Check if the given password matches current user's password.
 
         :param password: string
         :returns: True if password matches current user's password, 
@@ -678,7 +732,7 @@ class User(UserMixin, database.Model):
     
     def generate_auth_token(self, expiration=3600):
         """
-        Return authentication token for current user.
+        Return an authentication token for current user.
 
         :param expiration: Time in seconds after which token expires
         :returns: TimedJSONWebSignature
@@ -688,7 +742,7 @@ class User(UserMixin, database.Model):
     
     def generate_confirmation_token(self, expiration=3600):
         """
-        Return confirmation token for current user.
+        Return a confirmation token for current user.
 
         :param expiration: Time in seconds after which token expires
         :returns: TimedJSONWebSignature
@@ -698,7 +752,7 @@ class User(UserMixin, database.Model):
     
     def confirm(self, token):
         """
-        Check that given token belongs to current user
+        Check that the given token belongs to current user
         and set current user's 'confirmed' column to True
         if it does.
 
@@ -719,7 +773,7 @@ class User(UserMixin, database.Model):
 
     def has_contact(self, user):
         """
-        Check if current user has given user as a contact.
+        Check if current user has the given user as a contact.
 
         :param user: User model instance
         :returns: True if current user has user as a contact,
@@ -729,7 +783,7 @@ class User(UserMixin, database.Model):
     
     def is_contacted_by(self, user):
         """
-        Check if given user has current user as a contact.
+        Check if the given user has current user as a contact.
 
         :param user: User model instance
         :returns: True if user has current user as a contact,
@@ -739,7 +793,7 @@ class User(UserMixin, database.Model):
     
     def add_contacts(self, users, contact_group=None):
         """
-        Add users to contacts of current user.
+        Add  the given users to current user's contacts.
 
         :param users: list of User model instances
         :param contact_group: name of contact group
@@ -753,7 +807,7 @@ class User(UserMixin, database.Model):
 
     def delete_contacts(self, users):
         """
-        Delete users from contacts of current user.
+        Delete the given users from contacts of current user.
 
         :param users: sequence of User model instances
         """
@@ -764,7 +818,7 @@ class User(UserMixin, database.Model):
     
     def get_other_users_query(self):
         """
-        Return query of users not including user
+        Return a query of users not including current user
         ordered by column 'username' in ascending order.
 
         :returns: User model query
@@ -776,8 +830,8 @@ class User(UserMixin, database.Model):
     
     def get_available_chats_query(self):
         """
-        Return query of current user's chats 
-        not marked as removed ordered by the modification date
+        Return a query of current user's chats 
+        not marked as removed ordered by modification date
         in descending order.
 
         :returns: User model query
@@ -796,15 +850,11 @@ class User(UserMixin, database.Model):
         """
         Return a list of dictionaries with keys
         'text', 'date_created', 'sender_username', 'recipient_username'
-        sorted by the creation date in ascending order.
+        sorted by creation date in ascending order.
 
         :param chat: Chat model instance
         :returns: list of dictionaries
         """
-        query_to_update = (chat
-                           .messages
-                           .filter(Message.sender != self,
-                                   not_(Message.was_read)))
         messages = chat.messages.order_by(Message.date_created).all()
         message_dict_list = []
         for message in messages:
@@ -817,7 +867,6 @@ class User(UserMixin, database.Model):
                             'sender_username': sender_name,
                             'recipient_username': recipient_name}
             message_dict_list.append(message_dict)
-        # Message.flush_messages(query_to_update)
         return message_dict_list
     
     def get_unread_messages_query(self, chat):
@@ -834,9 +883,9 @@ class User(UserMixin, database.Model):
 
     def search_users_query(self, username, users_query):
         """
-        Return query of users from given users_query
-        containing string in 'username'
-        except current user
+        Return a query of users (except current user) 
+        from the given users_query
+        containing the given username string in the 'username' column
         in ascending lexicographical order by 'username'.
 
         :param username: string to search in 'username' columns
@@ -844,7 +893,7 @@ class User(UserMixin, database.Model):
         :returns: User model query
         """
         query = (users_query
-                 .filter(User.username.like('%' + username + '%')))
+                 .filter(User.username.ilike('%' + username + '%')))
         return query
     
     @staticmethod
@@ -936,11 +985,11 @@ class Message(database.Model):
 
     def to_json(self, user):
         """
-        Return dictionary representation
+        Return a dictionary representation
         of current message.
 
-        :param user: current user (needed to get chat name)
-        :returns: Message model instance turned to dictionary
+        :param user: current user (needed to get the chat name)
+        :returns: Message model instance turned into a dictionary
         """
         if not self.recipient:
             recipient_username = ''
@@ -962,8 +1011,8 @@ class Message(database.Model):
         """
         Return a list of dictionaries with keys 
         'text', 'sender_username', 'date_created'
-        for the messages from the given query
-        sorted by the modification date in ascending order.
+        for the messages from the given message_query
+        sorted by modification date in ascending order.
 
         :param message_query: Message model query
         :returns: list of dictionaries
@@ -978,14 +1027,13 @@ class Message(database.Model):
                             'sender_username': sender_username,
                             'date_created': date_created.isoformat()}
             message_dict_list.append(message_dict)
-        # Message.flush_messages(query)
         return message_dict_list
     
     @staticmethod
     def from_json(json_message):
         """
-        Return Message model instance
-        created from dictionary.
+        Return a Message model instance
+        created from the give json_message dictionary.
 
         :param json_message: dictionary
         :returns: Message model instance
@@ -1007,7 +1055,8 @@ class Message(database.Model):
     @staticmethod  
     def flush_messages(message_query):
         """
-        Set 'was_read' column to True for all messages from message_query.
+        Set 'was_read' column to True for all messages 
+        from the given message_query.
 
         :param message_query: Message model query
         """

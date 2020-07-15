@@ -1,5 +1,5 @@
-from flask import Blueprint, Flask, request, session, current_app
-from flask_login import LoginManager, current_user
+from flask import Flask
+from flask_login import LoginManager
 from flask_mail import Mail
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate

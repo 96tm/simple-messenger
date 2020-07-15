@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     {% block favicon %}
         <link rel="shortcut icon" 
@@ -17,6 +16,8 @@
               href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
         <link rel="stylesheet" 
               href="{{ url_for('static', filename='css/footer.css') }}">
+        <link rel="stylesheet" 
+              href="{{ url_for('static', filename='css/base.css') }}">
     {% endblock %}
     
     <title>
@@ -26,58 +27,70 @@
     </title>
 
     {% block navbar %}
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark static-top">
-        <div class="container">
-            <a class="navbar-brand" href="{{ url_for('main.index') }}">
-                    SimpleMessenger
+    <nav class="navbar navbar-expand-md navbar-dark bg-dark">
+        <div class="navbar-collapse collapse 
+                    w-100 order-1 order-md-0 dual-collapse2">
+            {% if current_user.is_authenticated %}
+            <ul class="navbar-nav mr-auto">
+                <li class="nav-item active">
+                    <a class="nav-link" 
+                       href="{{ url_for('main.index') }}">
+                        Simple Messenger
+                     </a>
+                </li>
+            {% endif %}
+        </div>
+        <div class="mx-auto order-0">
+            {% if current_user.is_authenticated %}
+            <div class="navbar-brand mx-auto">
+                {{current_user.username}}
+            </div>
+            {% else %}
+            <a class="navbar-brand mx-auto" 
+               href="{{ url_for('main.index') }}">
+                Simple Messenger
             </a>
-            <button class="navbar-toggler" type="button" 
-                    data-toggle="collapse" 
-                    data-target="#navbarResponsive" 
-                    aria-controls="navbarResponsive"
-                    aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
+            {% endif %}
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target=".dual-collapse2">
+                <span class="navbar-toggler-icon"></span>
             </button>
+        </div>
+        <div class="navbar-collapse collapse w-100 order-3 dual-collapse2">
             <ul class="navbar-nav ml-auto">
                 {% if current_user.is_authenticated %}
                 <li class="nav-item">
-                    <div class="nav-link active">
-                        {{ current_user.username }} 
-                    </div>
-                </li>
-                <li class="nav-item">
-                  <a class="nav-link" 
+                  <a class="nav-link active" 
                      href="{{ url_for('auth.logout')}}">
-                        Log out
-                        <span class="sr-only">(current)</span>
+                       Log out
+                       <span class="sr-only">(current)</span>
                   </a>
                 </li>
                 {% endif %}
               </ul>
         </div>
+
     </nav>
     {% endblock %}
 </head>
 
 <body>
+    <div class="flashed-messages">
+        {% block flashed_messages %}
+            {% for message in get_flashed_messages() %}
+                <div class="alert alert-warning text-center">
+                    <button type="button" 
+                            class="close" 
+                            data-dismiss="alert">&times;</button>
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endblock %}
+    </div>
     <div class="wrapper flex-column">
-        <div class="flashed-messages">
-            {% block flashed_messages %}
-                {% for message in get_flashed_messages() %}
-                    <div class="alert alert-warning">
-                        <button type="button" 
-                                class="close" 
-                                data-dismiss="alert">&times;</button>
-                        {{ message }}
-                    </div>
-                {% endfor %}
-            {% endblock %}
-        </div>
         <div class="body-container container-fluid flex flex-column">
             {% block page_content %}
             {% endblock %}
         </div>
-
         {% block footer %}
             <footer class="footer text-center
                             {%block footer_class%} 

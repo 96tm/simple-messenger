@@ -1,7 +1,6 @@
 from app import create_app, database
-from app.models import Contact, Chat, format_date, Message
-from app.models import User, UserChatTable, Role, Permission
-from flask import current_app
+from app.models import Chat, Message
+from app.models import User, Role
 from app.exceptions import ValidationError
 import unittest
 
