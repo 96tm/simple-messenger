@@ -54,11 +54,11 @@ def signup():
     if form.validate_on_submit():
         username = form.username.data
         email = form.email.data.lower()
-        if User.query.filter_by(email=email).first():
-            flash('The email is already registered.')
-            return render_template('auth/registration.html', form=form)
-        elif User.query.filter_by(username=username).first():
+        if User.query.filter_by(username=username).first():
             flash('The username is already taken.')
+            return render_template('auth/registration.html', form=form)
+        elif User.query.filter_by(email=email).first():
+            flash('The email is already registered.')
             return render_template('auth/registration.html', form=form)
         user = User()
         user.username = username

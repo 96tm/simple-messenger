@@ -323,7 +323,7 @@ def index():
                           'unread_messages_count': unread_messages_count})
     current_chat_id = None
     current_chat_name = None
-    if session.get('current_chat_id'):
+    if session.get((current_user.id, 'current_chat_id')):
         current_chat_id = session.get((current_user.id, 'current_chat_id'))
     if current_chat_id:
         try:

@@ -6,7 +6,3 @@
   .body-container {
     flex: 1;
   }
-
-  html {
-    overflow: hidden;
-  }

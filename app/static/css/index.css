@@ -40,7 +40,6 @@ input[type=search]::placeholder {
 .wrapper {
   display: flex;
   min-height: 90vh;
-  /* flex-direction: column; */
 }
 
 .body-container {

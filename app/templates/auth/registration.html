@@ -17,8 +17,9 @@
     {% if form.errors %}
         {% for field in form %}
             {% for field_error in field.errors %}
-                <div class="alert alert-warning">
-                    <button type="button" class="close" data-dismiss="alert">&times;</button>
+                <div class="alert alert-warning text-center">
+                    <button type="button" class="close" 
+                            data-dismiss="alert">&times;</button>
                     {{ field_error }}
                 </div>
             {% endfor %}
@@ -28,12 +29,13 @@
 
 {% block page_content %}
     <div class="row">
-      <div class="col-sm-9 col-md-7 col-lg-5 mx-auto">
+      <div class="mx-auto">
         <div id="login-form-container" class="card card-signin my-5">
           <div class="card-body">
             <h5 class="card-title text-center">Sign up</h5>
 
-            <form class="form-signin" method="POST" action="{{ url_for('auth.signup') }}" role="form">
+            <form class="form-signin" method="POST" 
+                  action="{{ url_for('auth.signup') }}" role="form">
                 {{ form.hidden_tag() }}
                 <div class="form-label-group">
                   {{ form.username() }}

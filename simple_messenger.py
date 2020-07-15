@@ -30,4 +30,4 @@ def make_shell_context():
 
 
 if __name__ == '__main__':
-    socket_io.run(app)
+    socket_io.run(app, debug=True)

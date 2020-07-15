@@ -17,7 +17,7 @@
     {% if form.errors %}
         {% for field in form %}
             {% for field_error in field.errors %}
-                <div class="alert alert-warning">
+                <div class="alert alert-warning text-center">
                     <button class="close" 
                             type="button" 
                             data-dismiss="alert">
@@ -31,8 +31,8 @@
 {% endblock %}
 
 {% block page_content %}
-    <div class="row align-items-center">
-      <div class="col col-sm-9 col-md-7 col-lg-5 mx-auto">
+    <div class="row">
+      <div class="mx-auto">
         <div id="login-form-container" class="card card-signin my-5">
           <div class="card-body">
             <h5 class="card-title text-center">Log in</h5>
@@ -71,9 +71,4 @@
         </div>
       </div>
     </div>
-{% endblock %}
-
-{% block footer_class %}
-    {{super()}}
-    fixed-bottom
 {% endblock %}

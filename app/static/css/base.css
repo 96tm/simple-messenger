@@ -1,5 +1,9 @@
 .flashed-messages {
-  position: fixed;
   width: 100%;
+  position: absolute;
+  z-index: 10;
 }
 
+div.flashed-messages .alert {
+  margin-bottom: 0;
+}
