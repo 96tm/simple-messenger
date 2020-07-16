@@ -1,7 +1,7 @@
 [![License](https://img.shields.io/badge/license-MIT-green)](https://tldrlegal.com/license/mit-license)
 <br>
 
-# simple-messenger
+# Simple Messenger
 A client-server messenger built with Flask.<br>
 It uses WebSocket API<br> 
 (flask-socketio for the server, socket.io for the client, gevent as a transport)<br> 
@@ -98,7 +98,7 @@ PostgreSQL or sqlite3 can be used as RDBMS.
   <br>
 
   The easiest way to run the app is to create a Docker image and then run a container.<br>
-  If you have a Debian-based system (Ubuntu, Mint...), the following steps should work:<br>
+  If you have a Debian based system (Ubuntu, Mint...), the following steps should work:<br>
   - clone the repository
   ```
   $ git clone https://github.com/96tm/simple-messenger.git
@@ -151,8 +151,8 @@ PostgreSQL or sqlite3 can be used as RDBMS.
   you can log in right away 
   with the following email/password pairs:
   - email: ```arthur@arthur.arthur```, password: ```arthur```;
-  - email: ```morgain@morgain.morgain```, ```password: morgain```;
-  - email: ```merlin@merlin.merlin```, ```password: merlin```.
+  - email: ```morgain@morgain.morgain```, password: ```morgain```;
+  - email: ```merlin@merlin.merlin```, password: ```merlin```.
 </details>
 
 <details>
