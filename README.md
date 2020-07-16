@@ -2,7 +2,7 @@
 <br>
 
 # simple-messenger
-A messenger built with Flask
+A messenger built with Flask. Uses WebSocket API (flask-socketio, socket.io), features tiny REST API.
 
 <details>
   
