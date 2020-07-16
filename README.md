@@ -14,6 +14,8 @@ PostgreSQL or sqlite3 can be used as RDBMS.
     Database schema
   </summary>
   
+  <br>
+  
   ![Database schema](./screenshots/schema.png)
   <i>Made using <a href="https://pgmodeler.io/">pgmaker</a></i> 
 
@@ -24,6 +26,8 @@ PostgreSQL or sqlite3 can be used as RDBMS.
   <summary>
       Screenshots
   </summary>
+    
+  <br>
     
   ![Registration page](./screenshots/2.png)
   <i>Registration page</i>
