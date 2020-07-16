@@ -1,29 +1,13 @@
-/* li.chat-item::after{
-  content: '';
-  display: inline-block;
-  height: .7em;
-  width: .7em;
-  background-image: url('../img/new_mail.png');
-  background-size:contain;
-  background-repeat:no-repeat;
-  background-position: bottom; 
-} */
-
-li.selected-element {
-  font-weight: bold;
+li.selected-element,
+li.selected-current-chat {
+  background-color: #f5f5f5;
+  border-radius: 0.25rem;
+  background: rgba(0, 0, 0, 0.25);
+  color: white;
 }
 
-.center-from-left {
-  margin-left: auto;
-}
-
-.center-from-right {
-  margin-right: auto;
-}
-
-
-li.selected-current-chat{
-  font-weight: bold;
+.row {
+  min-height: 75vh;
 }
 
 .hidden-element{
@@ -36,35 +20,42 @@ li.selected-current-chat{
   padding: .375rem .75rem;
 }
 
-.card.mb-5.mb-lg-0{
-  height: 100%;
-}
-
-.message-field-window{
-  padding-bottom: .5em;
-}
-
-button#remove-selected-chat-id,
-button#add-contacts-id{
-  margin-top: 3.4em;
-}
-
 input[type=search]::placeholder {
   font-size: medium;
 }
 
+.message-field-wrapper {
+  height: 100%;
+}
+
 .message-area{
   overflow-y: scroll;
-  height: 12em;
+  height: 30vh;
   border: 1px solid #ced4da;
   border-radius: .25rem;
   transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;
   padding: .375rem .75rem;
 }
 
+.wrapper {
+  display: flex;
+  min-height: 90vh;
+}
+
+.body-container {
+  flex: 1;
+}
+
+.message-window {
+  max-width: 45vw;
+}
+
 textarea{
   resize: none;
+  box-sizing:border-box;
+  display:block;
   width: 100%;
+  height: 100%;
   background-color: #fff;
   padding: .375rem .75rem;
   font-size: 1rem;
@@ -75,25 +66,28 @@ textarea{
   transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;
 }
 
-#user-list-id,
-#chat-list-id {
-  padding-left: 0;
-  overflow-y: scroll;
-  height: 12em;
+.list-group-item {
+  cursor: pointer;
+  border-bottom: none;
 }
 
-li.chat-item,
-li.user-item{
-  cursor: pointer;
-  list-style: none;
+.user-list,
+.chat-list {
+  padding-left: 0;
+  overflow-y: scroll;
+  height: 35vh;
 }
 
 li.chat-item:hover,
 li.user-item:hover{
-  font-weight: bold;
+  background-color: #f5f5f5;
+  border-radius: 0.25rem;
+  background: rgba(0, 0, 0, 0.25);
+  color: white;
 }
 
 .row .card {
+  margin: .25em;
   border: none;
   border-radius: 1rem;
   transition: all 0.2s;
@@ -111,12 +105,37 @@ li.user-item:hover{
   font-weight: bold;
 }
 
-.row ul li {
-  margin-bottom: 1rem;
-}
-
 .row .text-muted {
   opacity: 0.7;
+}
+
+.btn {
+  font-size: 75%;
+  border-radius: 5rem;
+  letter-spacing: .1rem;
+  font-weight: bold;
+  padding: .5rem;
+  transition: all 0.2s;
+}
+
+
+/* Scrollbars */
+
+
+.scrollbar-dark::-webkit-scrollbar {
+
+  background-color: #F5F5F5; 
+}
+  
+.scrollbar-dark::-webkit-scrollbar-thumb {
+  border-radius: 10px;
+  background-image: -webkit-linear-gradient(330deg, #c9c9c98e 0%,#c9c9c98e 100%);
+  background-image: #c9c9c98e;
+}
+
+.scrollbar-dark {
+  scrollbar-color: #c9c9c98e white;
+
 }
 
 /* Hover Effects on Card */
@@ -132,11 +151,3 @@ li.user-item:hover{
   }
 }
 
-.btn {
-  font-size: 75%;
-  border-radius: 5rem;
-  letter-spacing: .1rem;
-  font-weight: bold;
-  padding: .5rem;
-  transition: all 0.2s;
-}

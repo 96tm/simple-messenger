@@ -1,10 +1,7 @@
-from . import api, errors
+from . import api
 from .authentication import auth
-from ..models import Chat
 
-from flask import abort, current_app, g, jsonify, request
-
-from sqlalchemy.exc import SQLAlchemyError
+from flask import abort, current_app, g, jsonify, request, url_for
 
 
 @api.route('/chats')

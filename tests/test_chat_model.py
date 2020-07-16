@@ -1,6 +1,6 @@
 from app import create_app, database
-from app.models import Chat, RemovedChat, User, Role
-from flask import current_app, url_for
+from app.models import Chat, User, Role
+from flask import url_for
 import unittest
 from app.exceptions import ValidationError
 
@@ -45,7 +45,6 @@ class ChatModelTestCase(unittest.TestCase):
                                   self.chat_morgana_bob])
         database.session.commit()
 
-    
     def tearDown(self):
         database.session.remove()
         database.drop_all()
@@ -76,57 +75,7 @@ class ChatModelTestCase(unittest.TestCase):
                          self.chat_bob_clair)
         self.assertEqual(Chat.get_chat([self.arthur, self.morgana]),
                          self.chat_morgana_arthur)
-
-    def test_mark_chats_as_removed(self):
-        Chat.mark_chats_as_removed(self.bob, [self.chat_bob_arthur])
-        self.assertEqual(RemovedChat.query.count(), 1)
-        self.assertEqual(RemovedChat.query.first().chat,
-                         self.chat_bob_arthur)
-        self.assertEqual(RemovedChat.query.first().user, self.bob)
    
-    def test_get_removed_chats(self):
-        Chat.mark_chats_as_removed(self.bob, [self.chat_bob_arthur])
-        Chat.mark_chats_as_removed(self.bob, [self.chat_morgana_bob])
-        self.assertEqual(RemovedChat.query.count(), 2)
-        removed = Chat.get_removed_chats(self.bob,
-                                         [self.bob.id, self.clair.id,
-                                          self.arthur.id, self.morgana.id])
-        self.assertEqual(removed,
-                         [self.chat_bob_arthur, self.chat_morgana_bob])
-        self.assertEqual(RemovedChat.query.count(), 0)
-
-        Chat.mark_chats_as_removed(self.bob, [self.chat_bob_arthur])
-        self.assertEqual(RemovedChat.query.count(), 1)
-        removed = Chat.get_removed_chats(self.bob,
-                                         [self.bob.id, self.clair.id,
-                                          self.arthur.id, self.morgana.id])
-        self.assertEqual(removed,
-                         [self.chat_bob_arthur])
-        self.assertEqual(RemovedChat.query.count(), 0)
-
-    def test_get_chat_query(self):
-        query = Chat.get_chat_query(self.bob, 
-                                    [self.clair.id, 
-                                     self.ophelia.id, 
-                                     self.arthur.id])
-        self.assertEqual(query.all(), 
-                         [self.chat_bob_arthur, self.chat_bob_clair])
-
-    def test_get_removed_query(self):
-        Chat.mark_chats_as_removed(self.bob,
-                                   [self.chat_bob_clair,
-                                    self.chat_morgana_bob])
-        query = Chat.get_removed_query(self.bob)
-        self.assertIn((RemovedChat
-                       .query
-                       .filter_by(chat_id=self.chat_bob_clair.id)).first(), 
-                      query.all())
-        self.assertIn((RemovedChat
-                       .query
-                       .filter_by(chat_id=self.chat_morgana_bob.id)).first(), 
-                      query.all())
-        self.assertEqual(query.count(), 2)
-
     def test_get_name(self):
         self.assertEqual(self.chat_morgana_bob.get_name(self.bob),
                          self.chat_morgana_bob.name)
@@ -168,13 +117,16 @@ class ChatModelTestCase(unittest.TestCase):
 
     def test_to_json(self):
         chat = self.chat_bob_arthur
-        json_chat = chat.to_json(self.bob)
-        self.assertEqual(json_chat,
-                         {'chat_name': self.arthur.username,
-                          'is_group_chat': chat.is_group_chat,
-                          'date_created': chat.date_created,
-                          'date_modified': chat.date_modified,
-                          'messages': url_for('api.get_messages', 
-                                      chat_id=chat.id,
-                                      _external=True)
-                         })
+        self.app.config['SERVER_NAME'] = 'localhost'
+        with self.app.app_context():
+            json_chat = chat.to_json(self.bob)
+            self.assertEqual(json_chat,
+                            {'chat_name': self.arthur.username,
+                            'is_group_chat': chat.is_group_chat,
+                            'date_created': chat.date_created,
+                            'date_modified': chat.date_modified,
+                            'messages': url_for('api.get_messages', 
+                                        chat_id=chat.id,
+                                        _external=True)
+                            })
+        del self.app.config['SERVER_NAME']

@@ -1,5 +1,9 @@
-  .page-header {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  }
+.flashed-messages {
+  width: 100%;
+  position: absolute;
+  z-index: 10;
+}
+
+div.flashed-messages .alert {
+  margin-bottom: 0;
+}

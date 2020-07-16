@@ -11,7 +11,6 @@ from flask_login import login_user, logout_user, login_required, current_user
 def before_request():
     if (current_user.is_authenticated
         and not current_user.confirmed
-        and request.endpoint
         and request.blueprint != 'auth'
         and request.blueprint != 'static'):
             return redirect(url_for('auth.unconfirmed'))
@@ -31,12 +30,12 @@ def login():
         user = User.query.filter_by(email=form.email.data).first()
         if user is not None and user.verify_password(form.password.data):
             login_user(user, form.remember_me.data)
-            next = request.args.get('next')
-            if next is None or not next.startswith('/'):
-                next = url_for('main.index')
-            return redirect(next)
+            next_page = request.args.get('next')
+            if next_page is None or not next_page.startswith('/'):
+                next_page = url_for('main.index')
+            return redirect(next_page)
         else:
-            flash('Invalid email or password')
+            flash('Invalid email or password.')
             form.data['password'] = ''
     return render_template('auth/login.html', form=form)
 
@@ -45,22 +44,21 @@ def login():
 @login_required
 def logout():
     logout_user()
-    flash('You have been logged out')
+    flash('You have been logged out.')
     return redirect(url_for('auth.login'))
 
 
 @auth.route('/signup', methods=['GET', 'POST'])
 def signup():
     form = RegistrationForm()
-
     if form.validate_on_submit():
         username = form.username.data
         email = form.email.data.lower()
-        if User.query.filter_by(email=email).first():
-            flash('The email is already registered')
+        if User.query.filter_by(username=username).first():
+            flash('The username is already taken.')
             return render_template('auth/registration.html', form=form)
-        elif User.query.filter_by(username=username).first():
-            flash('The username is already taken')
+        elif User.query.filter_by(email=email).first():
+            flash('The email is already registered.')
             return render_template('auth/registration.html', form=form)
         user = User()
         user.username = username
@@ -74,10 +72,11 @@ def signup():
                    'mail/registration_letter',
                    user=user,
                    token=token,
-                   link=url_for('auth.confirm', token=token, _external=True))
-        flash('A confirmation letter has been sent to ' + user.email)
-        return redirect(url_for('auth.login'))
-
+                   link=url_for('auth.confirm', 
+                                token=token, 
+                                _external=True))
+        login_user(user, remember=False)
+        return redirect(url_for('main.index'))
     return render_template('auth/registration.html', form=form)
 
 
@@ -90,7 +89,8 @@ def confirm(token):
         database.session.commit()
         flash('Your account has been confirmed.')
     else:
-        flash('The confirmation link is invalid or has expired. Please sign up again.')
+        flash('The confirmation link is invalid or has expired. '
+              + 'Please sign up again.')
     return redirect(url_for('main.index'))
 
 
@@ -103,6 +103,8 @@ def resend_confirmation():
                'mail/registration_letter',
                user=current_user,
                token=token,
-               link=url_for('auth.confirm', token=token, _external=True))
+               link=url_for('auth.confirm', 
+                            token=token, 
+                            _external=True))
     flash('A new confirmation letter has been sent to ' + current_user.email)
     return redirect(url_for('main.index'))

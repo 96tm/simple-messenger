@@ -1,8 +1,5 @@
 from app import create_app, database
-from app.models import User, Role, Permission, Contact, Message, Chat
-from app.main.views import check_new_messages
-from app.auth.forms import LoginForm
-from flask import current_app, json, jsonify
+from app.models import User, Role, Chat
 import unittest
         
 
@@ -28,7 +25,7 @@ class ClientTestCase(unittest.TestCase):
             'email': 'bob@bob.bob',
             'password': 'bob'
         }, follow_redirects=True)
-        self.assertIn(f'<li id="user-{self.arthur.id}" class="user-item">',
+        self.assertIn('Simple Messenger - bob',
                       response.get_data(as_text=True))
 
     def test_register_and_login(self):
@@ -65,44 +62,7 @@ class ClientTestCase(unittest.TestCase):
             'email': 'confirmed@confirmed.confirmed',
             'password': 'pass'
         }, follow_redirects=True)
-        self.assertIn(f'SimpleMessenger - {user.username}',
-                      response.get_data(as_text=True))
-
-    
-    def test_check_new_messages(self):
-        message1 = Message(text='hi there1', sender=self.arthur,
-                           recipient=self.bob, 
-                           was_read=True, chat=self.chat_bob_arthur)
-        message2 = Message(text='hi there2', sender=self.arthur,
-                           recipient=self.bob,
-                           was_read=True, chat=self.chat_bob_arthur)
-        message3 = Message(text='hi there3', sender=self.arthur,
-                           recipient=self.bob, chat=self.chat_bob_arthur)
-        message4 = Message(text='hi there4', sender=self.arthur,
-                           recipient=self.bob, chat=self.chat_bob_arthur)
-        database.session.add_all([message1, message2, message3, message4])
-        database.session.commit()
-        data = {'email': self.bob.email, 
-                'remember_me': True, 
-                'password': 'bob'}
-        self.client.post('/auth/login', data=data)
-        self.assertFalse(message3.was_read)
-        self.assertFalse(message4.was_read)
-        response = self.client.post('/check_new_messages',
-                                    content_type='application/json',
-                                    headers=[('X-Requested-With',
-                                              'XMLHttpRequest')],
-                                    json={'chat_id': self.chat_bob_arthur.id},
-                                    follow_redirects=True)
-        self.assertTrue(message3.was_read)
-        self.assertTrue(message4.was_read)
-    
-    def test_add_chat(self):
-        response = self.client.post('/auth/login', data={
-            'email': 'bob@bob.bob',
-            'password': 'bob'
-        }, follow_redirects=True)
-        self.assertIn(f'<li id="user-{self.arthur.id}" class="user-item">',
+        self.assertIn(f'Simple Messenger - {user.username}',
                       response.get_data(as_text=True))
 
     def tearDown(self):

@@ -1,14 +1,19 @@
 {% extends 'base.html' %}
 
 {% block title %}
-  SimpleChat - User not confirmed
+  Simple Messenger - User not confirmed
 {% endblock %}
 
 {% block page_content %}
 <div class="container">
 Hello, {{user.username}}!
-A letter with a confirmation link has been sent to {{user.email}}, 
-please check your inbox.
+A letter has been sent to {{user.email}}, 
+please check your inbox and follow the confirmation link in the letter.
 If you'd like to get another confirmation email, click <a href="{{url_for('auth.resend_confirmation')}}">here.</a>
 </div>
+{% endblock %}
+
+{% block footer_class %}
+    {{super()}}
+    fixed-bottom
 {% endblock %}

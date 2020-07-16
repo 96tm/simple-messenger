@@ -1,32 +1,33 @@
-from flask import Flask, Blueprint
-from flask_bootstrap import Bootstrap
+from flask import Flask
 from flask_login import LoginManager
 from flask_mail import Mail
 from flask_sqlalchemy import SQLAlchemy
-from flask_moment import Moment
+from flask_migrate import Migrate
+from flask_socketio import SocketIO
+from flask_session import Session
+
 from config import config
 
 
 database = SQLAlchemy()
 login_manager = LoginManager()
+flask_session = Session()
 mail = Mail()
-moment = Moment()
-bootstrap = Bootstrap()
+migrate = Migrate()
+socket_io = SocketIO(manage_session=False, async_mode='gevent')
 
 
 def create_app(config_name):
     wsgi_application = Flask(__name__)
     wsgi_application.config.from_object(config[config_name])
-    bootstrap.init_app(wsgi_application)
     database.init_app(wsgi_application)
     login_manager.session_protection = 'strong'
     login_manager.login_view = 'auth.login'
     login_manager.init_app(wsgi_application)
     mail.init_app(wsgi_application)
-    moment.init_app(wsgi_application)
-
-    from .main import main as main_blueprint
-    wsgi_application.register_blueprint(main_blueprint)
+    migrate.init_app(wsgi_application, database)
+    socket_io.init_app(wsgi_application)
+    flask_session.init_app(wsgi_application)
 
     from .auth import auth as auth_blueprint
     wsgi_application.register_blueprint(auth_blueprint, url_prefix='/auth')
@@ -34,4 +35,13 @@ def create_app(config_name):
     from .api_1_0 import api as api_blueprint
     wsgi_application.register_blueprint(api_blueprint, url_prefix='/api/v1.0')
 
+    from .errors import errors_blueprint
+    wsgi_application.register_blueprint(errors_blueprint)
+
+    from .main import main as main_blueprint
+    wsgi_application.register_blueprint(main_blueprint)
+
     return wsgi_application
+
+
+from app import models

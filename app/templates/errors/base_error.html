@@ -1,11 +1,12 @@
 {% extends "base.html" %}
 
-{% block title %}SimpleMessenger - Access denied {% endblock %}
-
 {% block page_content %}
-<div class="page-header">
+<div class="page-header text-center">
     <div class="error-message">
-        <h1>Access denied</h1>
+        <h1>
+            {% block error_message %}
+            {% endblock %}
+        </h1>
     </div>
 </div>
 {% endblock %}

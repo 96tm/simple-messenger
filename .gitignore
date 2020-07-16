@@ -1,6 +1,10 @@
 # other
 .vscode
+.mount
 venv
+certificates
+flask_session
+deployment/*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

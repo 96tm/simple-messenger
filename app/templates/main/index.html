@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+
+{% block title %}
+  Simple Messenger {% if current_user.username %}- {{current_user.username}} {% endif %}
+{% endblock %}
+
+{% block styles %}
+{{ super() }}
+  <link rel="stylesheet" 
+        href="{{ url_for('static', filename='css/index.css') }}">
+{% endblock %}
+
+{% block page_content %}
+  {% if current_user.is_authenticated %}
+      <div class="row justify-content-center my-5">
+        <!-- User search-->
+        <div class="user-window container
+                    col-3
+                    card card-body flex-column">
+              <h5 class="card-title text-muted 
+                        text-uppercase text-center">
+                Find users
+              </h5>
+              {{user_search_form.search_field()}}
+              <hr>
+              <div class="user-list-wrapper">
+                {% if users %}
+                <ul class="user-list list-group-flush scrollbar-dark">
+                  {% for user in users %}
+                  <li id="user-{{user.id}}" class="list-group-item">
+                    <span>{{ user.username }}</span>
+                  </li>
+                  {% endfor %}
+                </ul>
+                {% endif %}
+              </div>
+              <div class="mt-auto">
+                <button class="add-contacts 
+                              btn btn-block btn-primary 
+                              text-uppercase hidden-element">
+                  Add contacts
+                </button>
+            </div>
+        </div>
+        <!-- Chats -->
+        <div class="chat-window 
+                    col-3 
+                    card card-body flex-column">
+            <h5 class="card-title text-muted 
+                      text-uppercase text-center">
+              Your chats
+            </h5>
+            {{chat_search_form.search_field()}}
+            <hr>
+            <div class="chat-list-wrapper">
+              {% if chats %}
+                <ul class="chat-list list-group-flush scrollbar-dark">
+                  {% for chat in chats %}
+                    <li id="chat-{{ chat.chat_id}}"
+                        class="list-group-item
+                              {% if current_chat_id == chat.chat_id %} 
+                                selected-current-chat 
+                              {% endif %}">
+                      <span> {{chat.name}} </span>
+                      {% if chat.unread_messages_count %}
+                        <span class="badge badge-primary badge-pill 
+                                      list-group-item-dark">
+                          {{chat.unread_messages_count}}
+                        </span>
+                      {% endif %}
+                    </li>
+                  {% endfor %}
+                </ul>
+              {% else %}
+              <ul class="chat-list list-group-flush scrollbar-dark">
+              </ul>
+                
+              {% endif %}
+            </div>
+            <div class="mt-auto">
+              <button class="remove-selected-chat 
+                            btn btn-block btn-primary 
+                            text-uppercase 
+                            hidden-element">Remove</button>
+            </div>
+        </div>
+        <!-- Message window -->
+        <div class="message-window col-6
+                    card card-body flex-column
+                    {% if not current_chat_id %}
+                      hidden-element
+                    {% endif %}">
+              <h5 class="chat-header 
+                        card-title text-muted text-uppercase text-center">
+              {% if current_chat_name %} {{current_chat_name}} {% endif %}
+              </h5>
+              <div class="message-area-wrapper">
+                <div class="message-area scrollbar-dark">
+                </div>
+                <hr>
+              </div>
+              <div class="message-field-wrapper pb-3">
+                {{message_form.message_field()}}
+              </div>
+              <div class="mt-auto">
+                <button class="send-message 
+                              btn btn-block 
+                              btn-primary text-uppercase">
+                    Send message
+                </button>
+              </div>
+            </div>
+      </div>
+  {% endif %}
+{% endblock %}
+
+{% block scripts %}
+  {{ super() }}
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.2.0/socket.io.js" 
+          integrity="sha256-yr4fRk/GU1ehYJPAs8P4JlTgu0Hdsp4ZKrx8bDEDC3I=" 
+          crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.27.0/moment.min.js"
+          integrity="sha384-2B/wBCdjAUU/YBoPNyeMGxfXWhtxcQaDnAg02ilzQ6Y2Zqq9XalRKILiKDNj75ow" 
+          crossorigin="anonymous"></script>
+  <script src="{{ url_for('static', filename='js/index.js')}}"></script>
+{% endblock %}

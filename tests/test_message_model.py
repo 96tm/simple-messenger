@@ -1,7 +1,6 @@
 from app import create_app, database
-from app.models import Contact, Chat, format_date, Message
-from app.models import User, UserChatTable, Role, Permission
-from flask import current_app
+from app.models import Chat, Message
+from app.models import User, Role
 from app.exceptions import ValidationError
 import unittest
 
@@ -65,18 +64,6 @@ class MessageModelTestCase(unittest.TestCase):
         self.assertTrue(self.message3.was_read)
         self.assertTrue(self.message1.was_read)
         self.assertFalse(self.message4.was_read)
-    
-    def test_from_json(self):
-        json_message = {'text': 'hi there',
-                        'recipient_username': 'arthur'}
-        message = Message.from_json(json_message)
-        self.assertEqual(message.text, json_message['text'])
-        self.assertEqual(message.recipient.username, 
-                         json_message['recipient_username'])
-        json_message = {'text': 'hi there',
-                        'recipient_username': None}
-        with self.assertRaises(ValidationError):
-            Message.from_json(json_message)        
 
     def test_to_json(self):
         message = self.message1
