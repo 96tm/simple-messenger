@@ -29,7 +29,7 @@ PostgreSQL or sqlite3 can be used as RDBMS.
   
 <br>
 
-   ![After registration](./screenshots/3.png)
+  ![After registration](./screenshots/3.png)
   <i>After registration, the user is automatically logged in, but stays unconfirmed - they have to check the inbox and follow the provided link </i> 
   
 <br>
@@ -91,9 +91,9 @@ PostgreSQL or sqlite3 can be used as RDBMS.
   </summary>
   
   <br>
-  The easiest way to run the app is to create a Docker image and then run a container. 
-  If you have a Debian-based system (Ubuntu, Mint...), 
-  the following steps should work:
+
+  The easiest way to run the app is to create a Docker image and then run a container.<br>
+  If you have a Debian-based system (Ubuntu, Mint...), the following steps should work:<br>
   - clone the repository
   ```
   $ git clone https://github.com/96tm/simple-messenger.git
@@ -107,8 +107,10 @@ PostgreSQL or sqlite3 can be used as RDBMS.
   $ sudo docker pull postgres
   ```
   - run a Postgres container replacing "/directory/to/mount" with an appropriate directory
-    to store the database (if you have Postgres service on your system, 
-    you'll need to stop it with  something like ```$ sudo service postgresql stop```)
+    to store the database <br>
+    (if you have Postgres service on your system, 
+    you'll need to stop it with  something like <br>
+    ```$ sudo service postgresql stop```)
   ```
   $ sudo docker run --name postgres -d -p 5432:5432 \
     -e POSTGRES_USER=postgres_user \
@@ -117,12 +119,13 @@ PostgreSQL or sqlite3 can be used as RDBMS.
     -v /directory/to/mount:/var/lib/postgresql/data \
     --rm postgres:latest
   ```
-  - run a container with the Simple Messenger image
-    (you'll need to assign appropriate values to 
-     SECRET_KEY, MAIL_SERVER, MAIL_SENDER,
-     MAIL_USERNAME and MAIL_PASSWORD;
+  - run a container with the Simple Messenger image<br>
+    (you'll need to assign appropriate values to<br>
+     ```SECRET_KEY```, ```MAIL_SERVER```, ```MAIL_SENDER```,
+     ```MAIL_USERNAME``` and ```MAIL_PASSWORD```;<br>
      also, if you don't want to add fake users for testing,
-     remove the line "-e ADD_TEST_USERS=1 \")
+     remove the line <br>
+     ```-e ADD_TEST_USERS=1 \```)
   ```
   $ sudo docker run --name simple_messenger -d -p 8000:5000 \
     -e ADD_TEST_USERS=1 \
@@ -138,12 +141,13 @@ PostgreSQL or sqlite3 can be used as RDBMS.
     -e DATABASE_URI=postgresql://postgres_user:postgres_password@dbserver/db_name \
     --rm simple_messenger:latest
   ```
-  Now you can open the site at localhost:8000 and register.
-  If the test users were added, you can log in right away 
+  Now you can open the app at <a href="http://localhost:8000">localhost:8000 </a> and register.<br>
+  If test users were added (```-e ADD_TEST_USERS=1```),<br>
+  you can log in right away 
   with the following email/password pairs:
-  - email: arthur@arthur.arthur, password: arthur;
-  - email: morgain@morgain.morgain, password: morgain;
-  - email: merlin@merlin.merlin, password: merlin.
+  - email: ```arthur@arthur.arthur```, password: ```arthur```;
+  - email: ```morgain@morgain.morgain```, ```password: morgain```;
+  - email: ```merlin@merlin.merlin```, ```password: merlin```.
 </details>
 
 <details>
