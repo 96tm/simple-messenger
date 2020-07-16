@@ -80,3 +80,65 @@ A messenger built with Flask
   <i>Generic error page</i>   
     
 </details>
+
+<details>
+  
+  <summary>
+    Installation
+  </summary>
+  
+  <br>
+  
+  The easiest way is using Docker. If you run a Debian-based system (Ubuntu, Mint...), 
+  the following steps should work:
+  - clone the repository
+  ```
+  $ git clone https://github.com/96tm/simple-messenger.git
+  ```
+  - navigate to the project directory (Dockerfile is inside) and create a Docker image
+  ```
+  $ sudo docker build -t simple_messenger:latest .
+  ```
+  - download a Postgres image
+  ```
+  $ sudo docker pull postgres
+  ```
+  - run a Postgres container replacing "/directory/to/mount" with an appropriate directory
+    to store the database (if you have Postgres service on your system, 
+    you'll need to stop it with  something like ```$ sudo service postgresql stop```)
+  ```
+  $ sudo docker run --name postgres -d -p 5432:5432 \
+    -e POSTGRES_USER=postgres_user \
+    -e POSTGRES_PASSWORD=postgres_password \
+    -e POSTGRES_DB=db_name \
+    -v /directory/to/mount:/var/lib/postgresql/data \
+    --rm postgres:latest
+  ```
+  - run a container with the Simple Messenger image
+    (you'll need to assign appropriate values to 
+     SECRET_KEY, MAIL_SERVER, MAIL_SENDER,
+     MAIL_USERNAME and MAIL_PASSWORD;
+     also, if you don't want to add fake users for testing,
+     remove the line "-e ADD_TEST_USERS=1 \")
+  ```
+  $ sudo docker run --name simple_messenger -d -p 8000:5000 \
+    -e ADD_TEST_USERS=1 \
+    -e SECRET_KEY=make_it_secret \
+    -e SESSION_TYPE=filesystem \
+    -e MAIL_SERVER=mail_server \
+    -e MAIL_SENDER=mail@send.er \
+    -e MAIL_PORT=587 \
+    -e MAIL_USE_TLS=true \
+    -e MAIL_USERNAME=username \
+    -e MAIL_PASSWORD="password" \
+    --link postgres:dbserver \
+    -e DATABASE_URI=postgresql://postgres_user:postgres_password@dbserver/db_name \
+    --rm simple_messenger:latest
+  ```
+  Now you can open the site at localhost:8000 and register.
+  If the test users were added, you can log in right away 
+  with the following email/password pairs:
+  - email: arthur@arthur.arthur, password: arthur;
+  - email: morgain@morgain.morgain, password: morgain;
+  - email: merlin@merlin.merlin, password: merlin.
+</details>

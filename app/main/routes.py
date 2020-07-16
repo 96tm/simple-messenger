@@ -290,10 +290,10 @@ def add_contacts_and_chats(data):
                        {'added_chats': added_chats},
                        room=USER_WEBSOCKET_MAPPING[current_user.id])
     except (ValueError, TypeError):
-        traceback.print_exc()
+        log_exception
     except IntegrityError:
         database.session.rollback()
-        traceback.print_exc()
+        log_exception
 
 
 @main.route('/')

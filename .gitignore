@@ -5,6 +5,7 @@ venv
 certificates
 boot.sh
 flask_session
+deployment
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

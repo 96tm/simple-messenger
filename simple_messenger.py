@@ -1,11 +1,17 @@
 from app import create_app, database, socket_io
-from app.models import UserChatTable, Chat, add_test_data, RemovedChat
+from app.models import add_test_users as add_users
+from app.models import UserChatTable, Chat, RemovedChat
 from app.models import User, Role, Contact, Message
 from config import ProductionConfig
 
 
 app = create_app(ProductionConfig.name)
-            
+
+
+@app.cli.command('add_test_users')
+def add_test_users():
+    add_users()
+
 
 @app.cli.command('test')
 def test_all():
@@ -24,9 +30,7 @@ def make_shell_context():
             'RemovedChat': RemovedChat,
             'Contact': Contact, 
             'Message': Message,
-            'bob': User.query.filter_by(username='Robert').first(),
-            'add_test_data': add_test_data,
-            'arthur': User.query.filter_by(username='Arthur').first()}
+            'add_test_users': add_users}
 
 
 if __name__ == '__main__':

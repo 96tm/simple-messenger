@@ -2,7 +2,6 @@ window.setInterval(function() {
     let alerts = document.querySelectorAll("div.alert");
     let container = document.querySelector(".flashed-messages");
     for (alertMessage of alerts) {
-      console.log(alertMessage)
       var fadeEffect = setInterval(function () {
           if (alertMessage && !alertMessage.style.opacity) {
             alertMessage.style.opacity = 1;

@@ -34,14 +34,12 @@ def format_date(date):
     return date.strftime(date_format)
 
 
-def add_test_data():
+def add_test_users():
     """
     Load data to the database
     for testing purposes.
     """
     database.create_all()
-    bob = User(username='Robert', email='bob@bob.bob', 
-               password='bob', confirmed=True)
     arthur = User(username='Arthur', email='arthur@arthur.arthur',
                   password='arthur', confirmed=True)
     morgain = User(username='Morgain', email='morgain@morgain.morgain',
@@ -57,7 +55,7 @@ def add_test_data():
     guinevere = User(username='Guinevere', 
                      email='guinevere@guinevere.guinevere',
                      password='guinevere', confirmed=True)
-    guinevere = User(username='Uther', 
+    uther = User(username='Uther', 
                      email='uther@uther.uther',
                      password='uther', confirmed=True)
     mordred = User(username='Mordred', 
@@ -106,18 +104,12 @@ def add_test_data():
                  email='enide@enide.enide',
                  password='enide', confirmed=True)
 
-    database.session.add_all([bob, arthur, morgain, clair, merlin, ophelia,
+    database.session.add_all([arthur, morgain, clair, merlin, ophelia,
                               lancelot, guinevere, mordred, percival,
                               dinadan, gingalain, galahad, pelleas,
                               pellinore, tristan, branor, accolon, cailia,
-                              blanchefleur, brangaine, dindrane, enide])
-    chat0 = Chat()
-    chat0.add_users([bob, arthur])
-    chat1 = Chat()
-    chat1.add_users([bob, clair])
-    chat2 = Chat()
-    chat2.add_users([arthur, morgain])
-    database.session.add_all([chat0, chat1, chat2])
+                              blanchefleur, brangaine, dindrane, enide,
+                              uther])
     database.session.commit()
 
 
@@ -471,6 +463,7 @@ class User(UserMixin, database.Model):
     User model. Implements UserMixin, 
     used as a default authentication model by Flask-Login.
 
+
     Methods defined here:
 
     get_chat_query(user_ids)
@@ -558,7 +551,6 @@ class User(UserMixin, database.Model):
                                   secondary=UserChatTable,
                                   backref=database.backref('users', 
                                                            lazy='dynamic'))
-
     removed_chats = database.relationship('RemovedChat',
                                           backref='user',
                                           lazy='dynamic',
