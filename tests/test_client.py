@@ -25,7 +25,7 @@ class ClientTestCase(unittest.TestCase):
             'email': 'bob@bob.bob',
             'password': 'bob'
         }, follow_redirects=True)
-        self.assertIn('SimpleMessenger - bob',
+        self.assertIn('Simple Messenger - bob',
                       response.get_data(as_text=True))
 
     def test_register_and_login(self):
@@ -62,7 +62,7 @@ class ClientTestCase(unittest.TestCase):
             'email': 'confirmed@confirmed.confirmed',
             'password': 'pass'
         }, follow_redirects=True)
-        self.assertIn(f'SimpleMessenger - {user.username}',
+        self.assertIn(f'Simple Messenger - {user.username}',
                       response.get_data(as_text=True))
 
     def tearDown(self):

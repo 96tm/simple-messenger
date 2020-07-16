@@ -1030,19 +1030,14 @@ class Message(database.Model):
         :param json_message: dictionary
         :returns: Message model instance
         """
-        text = json_message.get('text')
-        recipient_username = json_message.get('recipient_username')
-        if recipient_username:
-            recipient = (User
-                         .query
-                         .filter_by(username=recipient_username)
-                         .first())
-        else:
-            raise ValidationError('Group chats are not implemented yet.')
-        message = Message()
-        message.text = text
-        message.recipient = recipient
-        return message
+        try:
+            text = str(json_message.get('text')).rstrip()
+            if text:
+                message = Message()
+                message.text = text[:current_app.config['MAX_STRING_LENGTH']]
+                return message
+        except (LookupError, ValueError):
+            pass
 
     @staticmethod  
     def flush_messages(message_query):

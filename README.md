@@ -2,7 +2,10 @@
 <br>
 
 # simple-messenger
-A messenger built with Flask. Uses WebSocket API (flask-socketio, socket.io), features tiny REST API.
+A client-server messenger built with Flask.
+It uses WebSocket API (flask-socketio, socket.io, gevent as a transport) and
+features a tiny REST API.
+PostgreSQL or sqlite3 can be used as RDBMS.
 
 <details>
   
@@ -11,7 +14,7 @@ A messenger built with Flask. Uses WebSocket API (flask-socketio, socket.io), fe
   </summary>
   
   ![Database schema](./screenshots/schema.png)
-  <i>This picture was made using <a href="https://pgmodeler.io/">pgmaker</a></i> 
+  <i>Made using <a href="https://pgmodeler.io/">pgmaker</a></i> 
 
 </details>
 
@@ -88,8 +91,8 @@ A messenger built with Flask. Uses WebSocket API (flask-socketio, socket.io), fe
   </summary>
   
   <br>
-  
-  The easiest way is using Docker. If you run a Debian-based system (Ubuntu, Mint...), 
+  The easiest way to run the app is to create a Docker image and then run a container. 
+  If you have a Debian-based system (Ubuntu, Mint...), 
   the following steps should work:
   - clone the repository
   ```
@@ -141,4 +144,28 @@ A messenger built with Flask. Uses WebSocket API (flask-socketio, socket.io), fe
   - email: arthur@arthur.arthur, password: arthur;
   - email: morgain@morgain.morgain, password: morgain;
   - email: merlin@merlin.merlin, password: merlin.
+</details>
+
+<details>
+  
+ <summary> 
+  REST API
+ </summary>
+ 
+ The following actions are available:
+ - get a list of the authenticated user's chats
+ ```/api/v1.0/chats```;
+ - get a chat by id
+ ```/api/v1.0/chats/1```;
+ - get a list of messages in the chat
+ ```/api/v1.0/chats/1/messages```;
+ - get a message by the id from the chat
+ ```/api/v1.0/chats/1/messages/1```;
+ - send a message
+ ```/api/v1.0/chats/1/messages/```.
+
+ Sending a message requires a JSON object in the form 
+ ```{"text" :"your_message_text"}```
+ in the request.
+ 
 </details>

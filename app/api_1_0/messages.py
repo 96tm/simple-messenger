@@ -1,7 +1,7 @@
 from . import api, errors
 from .authentication import auth
 from .. import database
-from ..models import Message
+from ..models import Message, User
 
 from flask import abort, current_app, g, jsonify, request, url_for
 
@@ -62,11 +62,21 @@ def new_message(chat_id):
             .filter_by(id=chat_id).first())
     if not chat:
         abort(404)
+    recipient = None
+    if not chat.is_group_chat:
+        recipient = (chat
+                    .users
+                    .filter(User.id != g.current_user.id)
+                    .first())
+    else:
+        abort(404)
     message = Message.from_json(request.json)
+    if not message:
+        return errors.generate_error(errors.CONFLICT,
+                                     'cannot process client data')
     message.sender = g.current_user
     message.chat = chat
-    if not message:
-        abort(404)
+    message.recipient = recipient
     database.session.add(message)
     database.session.commit()
     return (jsonify(message.to_json(g.current_user)), 

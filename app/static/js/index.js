@@ -28,8 +28,6 @@ const MESSAGE_AREA_CLASS = ".message-area";
 const MESSAGE_FIELD_CLASS =".message-field";
 const SEND_MESSAGE_BUTTON_CLASS = ".send-message";
 
-const JSON_CONTENT_TYPE = "application/json";
-
 
 // utility functions
 function format_date(date) {
@@ -664,4 +662,3 @@ window
             messageWindow.loadMessages(chatWindow.selectedChatId);
     }
 });
-

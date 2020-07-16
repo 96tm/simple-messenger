@@ -1,8 +1,8 @@
-  .wrapper {
-    display: flex;
-    min-height: 100vh;
-  }
+.wrapper {
+  display: flex;
+  min-height: 100vh;
+}
   
-  .body-container {
-    flex: 1;
-  }
+.body-container {
+  flex: 1;
+}
