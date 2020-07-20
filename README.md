@@ -127,6 +127,13 @@ and features a tiny REST API.<br>
   $ sudo docker image rm python:3.7-alpine
   $ sudo docker image rm postgres
   ```
+  Now you can open the app at <a href="http://localhost:8000">localhost:8000 </a> and register.<br>
+  If test users were added (```-e ADD_TEST_USERS=1```),<br>
+  you can log in right away 
+  with the following email/password pairs:
+  - email: ```arthur@arthur.arthur```, password: ```arthur```;
+  - email: ```morgain@morgain.morgain```, password: ```morgain```;
+  - email: ```merlin@merlin.merlin```, password: ```merlin```.
 </details>
 
 <details>
