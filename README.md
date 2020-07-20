@@ -118,10 +118,9 @@ and features a tiny REST API.<br>
   - email: ```morgain@morgain.morgain```, password: ```morgain```;
   - email: ```merlin@merlin.merlin```, password: ```merlin```.
  
- To uninstall the application, do the following:<br>
+ To uninstall the application, run the following:<br>
   ```sh
-  $ chmod +x uninstall.sh
-  $ sudo ./uninstall.sh
+  $ chmod +x uninstall.sh; sudo ./uninstall.sh
   ```
   To remove the images:
   ```sh
