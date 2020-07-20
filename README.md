@@ -6,7 +6,9 @@ A client-server messenger built with ```Flask```.<br>
 It uses ```WebSocket API```<br> 
 (```flask-socketio``` for the server, ```socket.io``` for the client, ```gevent``` as a transport)<br> 
 and features a tiny REST API.<br>
-```PostgreSQL``` or ```sqlite3``` can be used as RDBMS.
+```PostgreSQL``` or ```sqlite3``` can be used as RDBMS.<br>
+The web interface looks okay in ```Firefox 78.0.2```, not so much in ```Chromium 84.0.4147.89```.<br>
+Other browsers have not been tested.
 
 <details>
   
