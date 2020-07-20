@@ -3,6 +3,7 @@ from app.models import add_test_users as add_users
 from app.models import UserChatTable, Chat, RemovedChat
 from app.models import User, Role, Contact, Message
 from config import ProductionConfig
+from sqlalchemy.exc import IntegrityError
 
 
 app = create_app(ProductionConfig.name)
@@ -10,7 +11,11 @@ app = create_app(ProductionConfig.name)
 
 @app.cli.command('add_test_users')
 def add_test_users():
-    add_users()
+    try:
+        add_users()
+    except IntegrityError:
+        database.session.rollback()
+        return
 
 
 @app.cli.command('test')

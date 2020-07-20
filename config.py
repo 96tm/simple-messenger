@@ -16,12 +16,22 @@ class Config:
     MAIL_SUBJECT_PREFIX = os.environ.get('MAIL_SUBJECT_PREFIX',
                                          '[SimpleMessenger]')
     MAIL_SENDER = os.environ.get('MAIL_SENDER', 'Admin <use@some.mail')
+    MAIL_USERNAME = MAIL_SENDER[:MAIL_SENDER.rfind('@')]
+    MAIL_PORT = os.environ.get('MAIL_PORT', 587)
+    MAIL_SERVER = os.environ.get('MAIL_SERVER')
+    MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')
     ADMIN = os.environ.get('SIMPLE_MESSENGER_ADMIN', 'Admin')
     ADMIN_MAIL = os.environ.get('ADMIN_MAIL', 'admin@admin.admin')
     MAX_STRING_LENGTH = 64
     USERS_PER_PAGE = 10
     CHATS_PER_PAGE = 10
     MESSAGES_PER_PAGE = 10
+    
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URI',
+                                             ('sqlite:///' 
+                                              + os.path.join(basedir,
+                                              		      'database',
+                                                             'app.db')))
 
     @staticmethod
     def init_app(app):
@@ -30,15 +40,8 @@ class Config:
 class DevelopmentConfig(Config):
     name = 'development'
     DEBUG = True
-    MAIL_SERVER = 'smtp.mail.ru'
-    MAIL_PORT = 587
     MAIL_USE_TLS = True
-    MAIL_USERNAME = os.environ.get('MAIL_USERNAME')
-    MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URI',
-                                             ('sqlite:///' 
-                                              + os.path.join(basedir, 
-                                                             'app.db')))
+
 
 
 class TestingConfig(Config):
@@ -51,15 +54,8 @@ class TestingConfig(Config):
 class ProductionConfig(Config):
     name = 'production'
     DEBUG = False
-    MAIL_SERVER = os.environ.get('MAIL_SERVER')
-    MAIL_PORT = os.environ.get('MAIL_PORT')
     MAIL_USE_TLS = True
-    MAIL_USERNAME = os.environ.get('MAIL_USERNAME')
-    MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URI',
-                                             ('sqlite:///' 
-                                              + os.path.join(basedir, 
-                                                             'app.db')))
+
 
 config = {'development': DevelopmentConfig,
           'testing':     TestingConfig,
