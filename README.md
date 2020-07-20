@@ -111,11 +111,11 @@ and features a tiny REST API.<br>
   ```sh
   $ sudo ./install.sh "MAIL_SERVER" "EMAIL_ADDRESS" "EMAIL_PASSWORD"
   ```
-  Now you can open the app at <a href="http://localhost:8888">localhost:8888 </a> and register.<br>
-  Or you can log in right away with the following test email/password pairs:
-  - email: ```arthur@arthur.arthur```, password: ```arthur```;
-  - email: ```morgain@morgain.morgain```, password: ```morgain```;
-  - email: ```merlin@merlin.merlin```, password: ```merlin```.
+  Now you can open the app at <a href="http://localhost:8888/auth/signup">localhost:8888/auth/signup</a> and register.<br>
+  Or you can <a href="http://localhost:8888">log in</a> right away with the one of the test email/password pairs:
+  - email ```arthur@arthur.arthur```, password ```arthur```;
+  - email ```morgain@morgain.morgain```, password ```morgain```;
+  - email ```merlin@merlin.merlin```, password ```merlin```.
  
  To uninstall the application, run the following:<br>
   ```sh
