@@ -2,11 +2,11 @@
 <br>
 
 # Simple Messenger
-A client-server messenger built with Flask.<br>
-It uses WebSocket API<br> 
-(flask-socketio for the server, socket.io for the client, gevent as a transport)<br> 
+A client-server messenger built with ```Flask```.<br>
+It uses ```WebSocket API```<br> 
+(```flask-socketio``` for the server, ```socket.io``` for the client, ```gevent``` as a transport)<br> 
 and features a tiny REST API.<br>
-PostgreSQL or sqlite3 can be used as RDBMS.
+```PostgreSQL``` or ```sqlite3``` can be used as RDBMS.
 
 <details>
   
@@ -97,54 +97,35 @@ PostgreSQL or sqlite3 can be used as RDBMS.
   
   <br>
 
-  The easiest way to run the app is to create a Docker image and then run a container.<br>
-  If you have a Debian based system (Ubuntu, Mint...), the following steps should work:<br>
-  - clone the repository
+  The easiest way to run the app is to create a Docker image and then run it in a container.<br>
+  If you have a Debian based system (Ubuntu, Mint...), the following steps should work<br>
+  (tested on ```Ubuntu 20.04 LTS``` with ```docker.io 19.03.8``` installed):<br>
+  - clone the repository, navigate to the project directory and make ```install.sh``` executable
+  ```sh
+  $ git clone https://github.com/96tm/simple-messenger.git; cd simple-messenger; chmod +x install.sh
   ```
-  $ git clone https://github.com/96tm/simple-messenger.git
+  - run the installation script 
+  (replace ```MAIL_SERVER``` with an email server of your choice,
+   ```EMAIL_ADDRESS``` with an account address on that server,
+   ```EMAIL_PASSWORD``` with the account's password):<br>
+  ```sh
+  $ sudo ./install.sh "MAIL_SERVER" "EMAIL_ADDRESS" "EMAIL_PASSWORD"
   ```
-  - navigate to the project directory (Dockerfile is inside) and create a Docker image
+  Now you can open the app at <a href="http://localhost:8888">localhost:8888 </a> and register.<br>
+  Or you can log in right away 
+  with the following test email/password pairs:
+  - email: ```arthur@arthur.arthur```, password: ```arthur```;
+  - email: ```morgain@morgain.morgain```, password: ```morgain```;
+  - email: ```merlin@merlin.merlin```, password: ```merlin```.
+ 
+ To uninstall the application, run the following:<br>
+  ```sh
+  $ chmod +x uninstall.sh; sudo ./uninstall.sh
   ```
-  $ sudo docker build -t simple_messenger:latest .
-  ```
-  - download a Postgres image
-  ```
-  $ sudo docker pull postgres
-  ```
-  - run a Postgres container replacing "/directory/to/mount" with an appropriate directory
-    to store the database <br>
-    (if you have Postgres service on your system, 
-    you'll need to stop it with  something like <br>
-    ```$ sudo service postgresql stop```)
-  ```
-  $ sudo docker run --name postgres -d -p 5432:5432 \
-    -e POSTGRES_USER=postgres_user \
-    -e POSTGRES_PASSWORD=postgres_password \
-    -e POSTGRES_DB=db_name \
-    -v /directory/to/mount:/var/lib/postgresql/data \
-    --rm postgres:latest
-  ```
-  - run a container with the Simple Messenger image<br>
-    (you'll need to assign appropriate values to<br>
-     ```SECRET_KEY```, ```MAIL_SERVER```, ```MAIL_SENDER```,
-     ```MAIL_USERNAME``` and ```MAIL_PASSWORD```;<br>
-     also, if you don't want to add fake users for testing,
-     remove the line <br>
-     ```-e ADD_TEST_USERS=1 \```)
-  ```
-  $ sudo docker run --name simple_messenger -d -p 8000:5000 \
-    -e ADD_TEST_USERS=1 \
-    -e SECRET_KEY=make_it_secret \
-    -e SESSION_TYPE=filesystem \
-    -e MAIL_SERVER=mail_server \
-    -e MAIL_SENDER=mail@send.er \
-    -e MAIL_PORT=587 \
-    -e MAIL_USE_TLS=true \
-    -e MAIL_USERNAME=username \
-    -e MAIL_PASSWORD="password" \
-    --link postgres:dbserver \
-    -e DATABASE_URI=postgresql://postgres_user:postgres_password@dbserver/db_name \
-    --rm simple_messenger:latest
+  To remove the images:
+  ```sh
+  $ sudo docker image rm python:3.7-alpine
+  $ sudo docker image rm postgres
   ```
   Now you can open the app at <a href="http://localhost:8000">localhost:8000 </a> and register.<br>
   If test users were added (```-e ADD_TEST_USERS=1```),<br>
