@@ -24,7 +24,7 @@ def log_exception():
 @socket_io.on('search_users')
 def search_users(data):
     try:
-        username = escape(str(data['username']))
+        username = str(escape(data['username']))
         username = username[:current_app.config['MAX_STRING_LENGTH']]
         page_number = int(data['page_number'])
         users = (current_user
@@ -84,7 +84,7 @@ def load_users(data):
 @socket_io.on('search_chats')
 def search_chats(data):
     try:
-        chat_name = escape(str(data['chat_name']))
+        chat_name = str(escape(data['chat_name']))
         chat_name = chat_name[:current_app.config['MAX_STRING_LENGTH']]
         page_number = int(data['page_number'])
 
@@ -170,7 +170,7 @@ def send_message(data):
     global CHAT_UPDATES_POOL
     try:
         message = None
-        text = escape(str(data['message_text']).rstrip())
+        text = str(escape(data['message_text'])).rstrip()
         if not text:
             return
         chat_id = int(data['chat_id'])
@@ -185,7 +185,7 @@ def send_message(data):
                           sender=current_user,
                           recipient=recipient,
                           chat=chat)
-        chat.date_modified = datetime.now(tz=timezone.utc)
+        chat.date_modified = datetime.now()
         database.session.add_all([message, chat])
         database.session.commit()
         recipients = (chat
@@ -271,7 +271,7 @@ def add_contacts_and_chats(data):
         for chat in removed_chats:
             added_chats.append({'chat_name': chat.get_name(current_user),
                                 'chat_id': str(chat.id)})
-            chat.date_modified = datetime.now(tz=timezone.utc)
+            chat.date_modified = datetime.now()
             database.session.add(chat)
         for user in User.query.filter(User.id.in_(user_ids)):
             if not current_user.has_contact(user):
@@ -371,4 +371,4 @@ def send_update(data, sid):
 @main.before_app_request
 def before_request():
     if current_user.is_authenticated and current_user.confirmed:
-        current_user.last_seen = datetime.now(tz=timezone.utc)
+        current_user.last_seen = datetime.now()

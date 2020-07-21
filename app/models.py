@@ -12,7 +12,7 @@ from functools import partial
 from werkzeug.security import generate_password_hash, check_password_hash
 
 
-utc_now = partial(datetime.now, tz=timezone.utc)
+utc_now = datetime.now
 
 
 @login_manager.user_loader
@@ -218,12 +218,12 @@ class Contact(database.Model):
                                  primary_key=True)
     contact_group = database.Column(database.String(16), nullable=True)
 
-    _date_created = database.Column(database.DateTime(timezone=True),
+    _date_created = database.Column(database.DateTime(),
                                     default=utc_now)
 
     @hybrid_property
     def date_created(self):
-        return self._date_created.astimezone(timezone.utc)
+        return self._date_created
     
     @date_created.expression
     def date_created(self):
@@ -267,9 +267,9 @@ class Chat(database.Model):
     id = database.Column(database.Integer, primary_key=True)
     name = database.Column(database.String(64))
     is_group_chat = database.Column(database.Boolean, default=False)
-    _date_created = database.Column(database.DateTime(timezone=True),
+    _date_created = database.Column(database.DateTime(),
                                     default=utc_now)
-    _date_modified = database.Column(database.DateTime(timezone=True),
+    _date_modified = database.Column(database.DateTime(),
                                      default=utc_now,
                                      onupdate=utc_now)
     removed_users = database.relationship('RemovedChat',
@@ -279,7 +279,7 @@ class Chat(database.Model):
     
     @hybrid_property
     def date_created(self):
-        return self._date_created.astimezone(timezone.utc)
+        return self._date_created
     
     @date_created.expression
     def date_created(self):
@@ -291,7 +291,7 @@ class Chat(database.Model):
 
     @hybrid_property
     def date_modified(self):
-        return self._date_modified.astimezone(timezone.utc)
+        return self._date_modified
     
     @date_modified.expression
     def date_modified(self):
@@ -512,11 +512,11 @@ class User(UserMixin, database.Model):
     __tablename__ = 'users'
     id = database.Column(database.Integer, primary_key=True)
     confirmed = database.Column(database.Boolean, default=False)
-    last_seen = database.Column(database.DateTime(timezone=True), 
+    last_seen = database.Column(database.DateTime(), 
                                 nullable=True)
     role_id = database.Column(database.Integer, 
                               database.ForeignKey('roles.id'))
-    _date_created = database.Column(database.DateTime(timezone=True), 
+    _date_created = database.Column(database.DateTime(), 
                                     nullable=False,
                                     default=utc_now)
     username = database.Column(database.String(64), 
@@ -571,7 +571,7 @@ class User(UserMixin, database.Model):
 
     @hybrid_property
     def date_created(self):
-        return self._date_created.astimezone(timezone.utc)
+        return self._date_created
     
     @date_created.expression
     def date_created(self):
@@ -933,7 +933,7 @@ class Message(database.Model):
     was_read = database.Column(database.Boolean,
                                default=False)
     text = database.Column(database.Text)
-    _date_created = database.Column(database.DateTime(timezone=True),
+    _date_created = database.Column(database.DateTime(),
                                      nullable=False,
                                      default=utc_now)
     sender_id = database.Column(database.Integer, 
@@ -965,7 +965,7 @@ class Message(database.Model):
     
     @hybrid_property
     def date_created(self):
-        return self._date_created.astimezone(timezone.utc)
+        return self._date_created
 
     @date_created.expression
     def date_created(self):

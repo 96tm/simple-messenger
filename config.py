@@ -27,11 +27,7 @@ class Config:
     CHATS_PER_PAGE = 10
     MESSAGES_PER_PAGE = 10
     
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URI',
-                                             ('sqlite:///' 
-                                              + os.path.join(basedir,
-                                              		      'database',
-                                                             'app.db')))
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URI')
 
     @staticmethod
     def init_app(app):
