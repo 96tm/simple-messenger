@@ -19,7 +19,7 @@ Other browsers have not been tested.
   <br>
   
   ![Database schema](./screenshots/schema.png)
-  <i>Made using <a href="https://pgmodeler.io/">pgmaker</a></i> 
+  <i>Made using <a href="https://pgmodeler.io/">pgmodeler</a></i> 
 
 </details>
 
