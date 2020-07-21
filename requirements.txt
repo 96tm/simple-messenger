@@ -27,6 +27,7 @@ Mako==1.1.2
 MarkupSafe==1.1.1
 mypy==0.782
 mypy-extensions==0.4.3
+PyMySQL==0.10.0
 python-dateutil==2.8.1
 python-dotenv==0.13.0
 python-editor==1.0.4
