@@ -37,7 +37,7 @@ Other browsers have not been tested.
 <br>
 
   ![After registration](./screenshots/3.png)
-  <i>After registration, the user is automatically logged in, but stays unconfirmed - they have to check the inbox and follow the provided link </i> 
+  <i>After registration, the user is automatically logged in but stays unconfirmed - they have to check the inbox and follow the provided link </i> 
   
 <br>
 
