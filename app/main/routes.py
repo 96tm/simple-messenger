@@ -24,7 +24,7 @@ def log_exception():
 @socket_io.on('search_users')
 def search_users(data):
     try:
-        username = escape(str(data['username']))
+        username = str(escape(data['username']))
         username = username[:current_app.config['MAX_STRING_LENGTH']]
         page_number = int(data['page_number'])
         users = (current_user
@@ -84,7 +84,7 @@ def load_users(data):
 @socket_io.on('search_chats')
 def search_chats(data):
     try:
-        chat_name = escape(str(data['chat_name']))
+        chat_name = str(escape(data['chat_name']))
         chat_name = chat_name[:current_app.config['MAX_STRING_LENGTH']]
         page_number = int(data['page_number'])
 
@@ -170,7 +170,7 @@ def send_message(data):
     global CHAT_UPDATES_POOL
     try:
         message = None
-        text = escape(str(data['message_text']).rstrip())
+        text = str(escape(data['message_text']).rstrip())
         if not text:
             return
         chat_id = int(data['chat_id'])
