@@ -7,7 +7,7 @@ It uses ```WebSocket API```<br>
 (```flask-socketio``` for the server, ```socket.io``` for the client, ```gevent``` as a transport)<br> 
 and features a tiny REST API.<br>
 ```PostgreSQL``` is the default RDBMS.<br>
-Email sending is implemented using Celery with Redis as a message broker.
+Email sending is implemented using Celery with Redis as a message broker.<br>
 The web interface looks okay in ```Firefox 78.0.2```, not so much in ```Chromium 84.0.4147.89```.<br>
 Other browsers have not been tested.
 
