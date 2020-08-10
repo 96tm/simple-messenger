@@ -1,15 +1,14 @@
-from app import create_app, database, socket_io
+from app import celery, create_app, database, socket_io
 from app.models import add_test_users as add_users
 from app.models import UserChatTable, Chat, RemovedChat
 from app.models import User, Role, Contact, Message
-from config import ProductionConfig
 from sqlalchemy.exc import IntegrityError
 
 
-app = create_app(ProductionConfig.name)
+app = create_app()
 
 
-@app.cli.command('add_test_users')
+@app.cli.command('add_test_users', help='Add test users to the database.')
 def add_test_users():
     try:
         add_users()
@@ -18,7 +17,7 @@ def add_test_users():
         return
 
 
-@app.cli.command('test')
+@app.cli.command('test', help='Run all tests.')
 def test_all():
     import unittest
     tests = unittest.TestLoader().discover('tests')
@@ -34,9 +33,8 @@ def make_shell_context():
             'Role': Role,
             'RemovedChat': RemovedChat,
             'Contact': Contact, 
-            'Message': Message,
-            'add_test_users': add_users}
+            'Message': Message}
 
 
 if __name__ == '__main__':
-    socket_io.run(app, debug=True)
+    socket_io.run(app, debug=False)

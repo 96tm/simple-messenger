@@ -1,13 +1,14 @@
 from app import create_app, database
 from app.models import Chat, User, Role
 from flask import url_for
-import unittest
 from app.exceptions import ValidationError
+
+import unittest
 
 
 class ChatModelTestCase(unittest.TestCase):
     def setUp(self):
-        self.app = create_app('testing')
+        self.app = create_app()
         self.app_context = self.app.app_context()
         self.app_context.push()
         database.create_all()
@@ -129,4 +130,3 @@ class ChatModelTestCase(unittest.TestCase):
                                         chat_id=chat.id,
                                         _external=True)
                             })
-        del self.app.config['SERVER_NAME']

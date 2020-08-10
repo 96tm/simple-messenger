@@ -7,7 +7,7 @@
 {% block page_content %}
 <div class="container">
 Hello, {{user.username}}!
-A letter has been sent to {{user.email}}, 
+A letter has been sent to <a href="mailto:{{user.email}}">{{user.email}}</a>, 
 please check your inbox and follow the confirmation link in the letter.
 If you'd like to get another confirmation email, click <a href="{{url_for('auth.resend_confirmation')}}">here.</a>
 </div>

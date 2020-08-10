@@ -1,13 +1,15 @@
 import gevent, traceback
 from gevent.pool import Pool
 from datetime import datetime, timezone
-from flask import copy_current_request_context, current_app, escape
+from flask import copy_current_request_context, current_app
+from flask import escape, redirect, url_for
 from flask import render_template, request, session
 from flask_login import current_user, login_required
 from sqlalchemy.exc import IntegrityError
 from werkzeug.exceptions import NotFound
 
 from . import main
+from .decorators import authenticated_only, disable_if_unconfirmed
 from .forms import ChatSearchForm, MessageForm, UserSearchForm
 from .. import database, socket_io
 from ..models import Chat, Message, User
@@ -22,6 +24,7 @@ def log_exception():
 
 
 @socket_io.on('search_users')
+@authenticated_only
 def search_users(data):
     try:
         username = str(escape(data['username']))
@@ -45,6 +48,7 @@ def search_users(data):
 
 
 @socket_io.on('load_messages')
+@authenticated_only
 def load_messages(data):
     try:
         chat_id = int(data['chat_id'])
@@ -59,6 +63,7 @@ def load_messages(data):
 
 
 @socket_io.on('load_users')
+@authenticated_only
 def load_users(data):
     try:
         page_number = int(data['page_number'])
@@ -82,6 +87,7 @@ def load_users(data):
 
 
 @socket_io.on('search_chats')
+@authenticated_only
 def search_chats(data):
     try:
         chat_name = str(escape(data['chat_name']))
@@ -106,6 +112,7 @@ def search_chats(data):
 
 
 @socket_io.on('load_chats')
+@authenticated_only
 def load_chats(data):
     try:
         page_number = int(data['page_number'])
@@ -127,6 +134,7 @@ def load_chats(data):
 
 
 @socket_io.on('remove_chat')
+@authenticated_only
 def remove_chat(data):
     try:
         chat_id = int(data['chat_id'])
@@ -144,11 +152,12 @@ def remove_chat(data):
 
 
 @socket_io.on('connect')
+@authenticated_only
 def save_room():
     global CHAT_UPDATES_POOL, USER_WEBSOCKET_MAPPING
     if current_user and not current_user.is_anonymous:
         USER_WEBSOCKET_MAPPING[current_user.id] = request.sid
-        data = get_updated_chats(current_user)
+        data = current_user.get_updated_chats(current_user, session)
         if data:
             worker = (gevent
                       .spawn(copy_current_request_context(send_update),
@@ -158,7 +167,8 @@ def save_room():
 
 
 @socket_io.on('disconnect')
-def test_disconnect():
+@authenticated_only
+def disconnect():
     global CHAT_UPDATES_POOL, USER_WEBSOCKET_MAPPING
     if current_user and not current_user.is_anonymous:
         if current_user.id in USER_WEBSOCKET_MAPPING:
@@ -166,6 +176,7 @@ def test_disconnect():
 
 
 @socket_io.on('send_message')
+@authenticated_only
 def send_message(data):
     global CHAT_UPDATES_POOL
     try:
@@ -206,7 +217,8 @@ def send_message(data):
             recipient.unmark_chats_as_removed([chat])
             if recipient.id in USER_WEBSOCKET_MAPPING:
                 sid = USER_WEBSOCKET_MAPPING[recipient.id]
-                data = get_updated_chats(recipient)
+                data = recipient.get_updated_chats(current_user, 
+                                                   session)
                 if data:
                     worker = (gevent
                              .spawn(copy_current_request_context(send_update),
@@ -222,6 +234,7 @@ def send_message(data):
 
 
 @socket_io.on('flush_messages')
+@authenticated_only
 def flush_messages(data):
     try:
         chat_id = int(data['chat_id'])
@@ -231,6 +244,7 @@ def flush_messages(data):
         log_exception()
 
 @socket_io.on('choose_chat')
+@authenticated_only
 def choose_chat(data):
     try:
         chat_id = int(data['chat_id'])
@@ -260,6 +274,7 @@ def choose_chat(data):
 
 
 @socket_io.on('add_contacts_and_chats')
+@authenticated_only
 def add_contacts_and_chats(data):
     try:
         new_contacts = []
@@ -298,6 +313,7 @@ def add_contacts_and_chats(data):
 
 @main.route('/')
 @login_required
+@disable_if_unconfirmed
 def index():
     current = current_user._get_current_object()
     users = current.get_other_users_query()
@@ -342,33 +358,6 @@ def index():
                           )
 
 
-def get_updated_chats(user):
-    available_chats = user.get_available_chats_query().all()
-    chats = []
-    messages = []
-    for chat in available_chats:
-        unread_messages_query = user.get_unread_messages_query(chat)
-        count = unread_messages_query.count()
-        if count:
-            chats.append({'chat_id': str(chat.id),
-                          'unread_messages_count': count,
-                          'chat_name': chat.get_name(user)})
-            current_chat_id = session.get((current_user.id, 'current_chat_id'))
-            if current_chat_id == chat.id:
-                messages = (Message
-                            .get_messages_list(unread_messages_query))
-    if chats:
-        data = {'chats': chats,
-                'current_chat_messages': messages,
-                'current_username': user.username}
-        return data
-
-
+@authenticated_only
 def send_update(data, sid):
     socket_io.emit('chat_updated', data, room=sid)
-
-
-@main.before_app_request
-def before_request():
-    if current_user.is_authenticated and current_user.confirmed:
-        current_user.last_seen = datetime.now(tz=timezone.utc)

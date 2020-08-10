@@ -58,12 +58,12 @@
                   {% for chat in chats %}
                     <li id="chat-{{ chat.chat_id}}"
                         class="list-group-item
-                              {% if current_chat_id == chat.chat_id %} 
-                                selected-current-chat 
+                              {% if current_chat_id == chat.chat_id %}
+                                selected-current-chat
                               {% endif %}">
                       <span> {{chat.name}} </span>
                       {% if chat.unread_messages_count %}
-                        <span class="badge badge-primary badge-pill 
+                        <span class="badge badge-primary badge-pill
                                       list-group-item-dark">
                           {{chat.unread_messages_count}}
                         </span>

@@ -3,13 +3,12 @@ import time
 from app import create_app, database
 from app.models import Contact, Chat, Message
 from app.models import User, UserChatTable, RemovedChat, Role, Permission
-from flask import current_app
 import unittest
 
 
 class UserModelTestCase(unittest.TestCase):
     def setUp(self):
-        self.app = create_app('testing')
+        self.app = create_app()
         self.app_context = self.app.app_context()
         self.app_context.push()
         database.create_all()
@@ -158,7 +157,7 @@ class UserModelTestCase(unittest.TestCase):
     def test_roles(self):
         Role.insert_roles()
         user = User(username='user', email='user@user.user', password='user')
-        admin = User(username='admin', email=current_app.config['ADMIN_MAIL'], password='admin')
+        admin = User(username='admin', email=self.app.config['ADMIN_MAIL'], password='admin')
         self.assertEqual(user.role, Role.query.filter_by(is_default=True).first())
         self.assertEqual(user.role, Role.query.filter_by(name='User').first())
         self.assertEqual(admin.role, Role.query.filter_by(name='Admin').first())
@@ -166,7 +165,7 @@ class UserModelTestCase(unittest.TestCase):
     def test_permissions(self):
         Role.insert_roles()
         user = User(username='user', email='user@user.user', password='user')
-        admin = User(username='admin', email=current_app.config['ADMIN_MAIL'], password='admin')
+        admin = User(username='admin', email=self.app.config['ADMIN_MAIL'], password='admin')
         self.assertFalse(user.has_permission(Permission.ADMINISTRATION))
         self.assertTrue(admin.has_permission(Permission.ADMINISTRATION))
     

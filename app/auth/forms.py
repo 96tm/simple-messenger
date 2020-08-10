@@ -5,15 +5,19 @@ from wtforms.validators import Email, EqualTo, Length, Regexp, Required
 
 class LoginForm(FlaskForm):
     email = StringField('Email', 
-                         validators=[Required(), Length(1, 64), Email()], 
+                         validators=[Required(), Length(5, 64), Email()], 
                          render_kw={'class': 'form-control',
                                     'placeholder': 'Email',
-                                    'type': 'email'})
+                                    'type': 'email',
+                                    'minlength': '5',
+                                    'maxlength': '64'})
     password = PasswordField('Password', 
-                             validators=[Required(), ],
+                             validators=[Required(), Length(8, 64)],
                              render_kw={'class': 'form-control',
                                         'placeholder': 'Password',
-                                        'required': 'required'})
+                                        'required': 'required',
+                                        'minlength': '8',
+                                        'maxlength': '64'})
     remember_me = BooleanField('Remember me',
                                render_kw={'class': 'custom-control-input'})
     
@@ -27,34 +31,44 @@ class RegistrationForm(FlaskForm):
                       + 'digits, dots and underscores')
     username = StringField('Username', 
                             validators=[Required(), 
-                                        Length(1, 64),
+                                        Length(3, 64),
                                         Regexp('^[A-Za-z0-9_. ]*$', 
                                                0, regexp_message)],
                             render_kw={'class': 'form-control',
                                        'placeholder': 'Username',
-                                       'required': 'required'})
+                                       'required': 'required',
+                                       'minlength': '3',
+                                       'maxlength': '64'})
     email = StringField('Email',
                          validators=[Required(), 
-                                     Length(1, 64), 
+                                     Length(5, 64), 
                                      Email()],
                          render_kw={'class': 'form-control',
                                     'placeholder': 'Email',
-                                    'type': 'email'})
+                                    'type': 'email',
+                                    'minlength': '5',
+                                    'maxlength': '64'})
     
     password = PasswordField('Password', 
                              validators=[Required(),
+                                         Length(8, 64),
                                          EqualTo('password_confirmation',
                                                  message=('Passwords '
                                                           + 'don\'t match'))],
                              render_kw={'class': 'form-control',
                                         'placeholder': 'Password',
-                                        'required': 'required'})
+                                        'required': 'required',
+                                        'minlength': '8',
+                                        'maxlength': '64'})
 
     password_confirmation_kw = {'class': 'form-control',
                                 'placeholder': 'Confirm password',
-                                'required': 'required'}
+                                'required': 'required',
+                                'minlength': '8',
+                                'maxlength': '64'}
     password_confirmation = PasswordField('Confirm password',
-                                          validators=[Required()],
+                                          validators=[Required(),
+                                                      Length(8, 64)],
                                           render_kw=password_confirmation_kw)
 
     submit_kw = {'class': 'btn btn-lg btn-primary btn-block text-uppercase'}

@@ -1,5 +1,5 @@
 window.setInterval(function() {
-    let alerts = document.querySelectorAll("div.alert");
+    let alerts = document.querySelectorAll("div.alert.alert-warning");
     let container = document.querySelector(".flashed-messages");
     for (alertMessage of alerts) {
       var fadeEffect = setInterval(function () {

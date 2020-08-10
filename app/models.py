@@ -41,68 +41,68 @@ def add_test_users():
     """
     database.create_all()
     arthur = User(username='Arthur', email='arthur@arthur.arthur',
-                  password='arthur', confirmed=True)
+                  password='arthurarthur', confirmed=True)
     morgain = User(username='Morgain', email='morgain@morgain.morgain',
-                   password='morgain', confirmed=True)
+                   password='morgainmorgain', confirmed=True)
     clair = User(username='Clair', email='clair@clair.clair',
-                 password='clair', confirmed=True)
+                 password='clairclair', confirmed=True)
     merlin = User(username='Merlin', email='merlin@merlin.merlin',
-                  password='merlin', confirmed=True)
+                  password='merlinmerlin', confirmed=True)
     ophelia = User(username='Ophelia', email='ophelia@ophelia.ophelia',
-                   password='ophelia', confirmed=True)
+                   password='opheliaophelia', confirmed=True)
     lancelot = User(username='Lancelot', email='lancelot@lancelot.lancelot',
-                    password='lancelot', confirmed=True)
+                    password='lancelotlancelot', confirmed=True)
     guinevere = User(username='Guinevere', 
                      email='guinevere@guinevere.guinevere',
-                     password='guinevere', confirmed=True)
+                     password='guinevereguinevere', confirmed=True)
     uther = User(username='Uther', 
                      email='uther@uther.uther',
-                     password='uther', confirmed=True)
+                     password='utheruther', confirmed=True)
     mordred = User(username='Mordred', 
                    email='mordred@mordred.mordred',
-                   password='mordred', confirmed=True)
+                   password='mordredmordred', confirmed=True)
     percival = User(username='Percival', 
                     email='percival@percival.percival',
-                    password='percival', confirmed=True)
+                    password='percivalpercival', confirmed=True)
     dinadan = User(username='Dinadan', 
                    email='dinadan@dinadan.dinadan',
-                   password='dinadan', confirmed=True)
+                   password='dinadandinadan', confirmed=True)
     gingalain = User(username='Gingalain', 
                      email='gingalain@gingalain.gingalain',
-                     password='gingalain', confirmed=True)
+                     password='gingalaingingalain', confirmed=True)
     galahad = User(username='Galahad', 
                    email='galahad@galahad.galahad',
-                   password='galahad', confirmed=True)
+                   password='galahadgalahad', confirmed=True)
     pelleas = User(username='Pelleas', 
                    email='pelleas@pelleas.pelleas',
-                   password='pelleas', confirmed=True)
+                   password='pelleaspelleas', confirmed=True)
     pellinore = User(username='Pellinore', 
                      email='pellinore@pellinore.pellinore',
-                     password='pellinore', confirmed=True)
+                     password='pellinorepellinore', confirmed=True)
     tristan = User(username='Tristan', 
                    email='tristan@tristan.tristan',
-                   password='tristan', confirmed=True)
+                   password='tristantristan', confirmed=True)
     branor = User(username='Branor', 
                   email='branor@branor.branor',
-                  password='branor', confirmed=True)
+                  password='branorbranor', confirmed=True)
     accolon = User(username='Accolon', 
                    email='accolon@accolon.accolon',
-                   password='accolon', confirmed=True)
+                   password='accolonaccolon', confirmed=True)
     blanchefleur = User(username='Blanchefleur', 
                         email='blanchefleur@blanchefleur.blanchefleur',
-                        password='blanchefleur', confirmed=True)
+                        password='blanchefleurblanchefleur', confirmed=True)
     brangaine = User(username='Brangaine', 
                      email='brangaine@brangaine.brangaine',
-                     password='brangaine', confirmed=True)
+                     password='brangainebrangaine', confirmed=True)
     cailia = User(username='Caelia', 
                   email='caelia@caelia.caelia',
-                  password='caelia', confirmed=True)
+                  password='caeliacaelia', confirmed=True)
     dindrane = User(username='Dindrane', 
                     email='dindrane@dindrane.dindrane',
-                    password='dindrane', confirmed=True)
+                    password='dindranedindrane', confirmed=True)
     enide = User(username='Enide', 
                  email='enide@enide.enide',
-                 password='enide', confirmed=True)
+                 password='enideenide', confirmed=True)
 
     database.session.add_all([arthur, morgain, clair, merlin, ophelia,
                               lancelot, guinevere, mordred, percival,
@@ -460,11 +460,14 @@ class Chat(database.Model):
 
 class User(UserMixin, database.Model):
     """
-    User model. Implements UserMixin, 
+    User model. 
+    Implements UserMixin, 
     used as a default authentication model by Flask-Login.
 
 
     Methods defined here:
+
+    get_updated_chats(current_user, session)
 
     get_chat_query(user_ids)
 
@@ -603,6 +606,38 @@ class User(UserMixin, database.Model):
         :param password: string
         """
         self.password_hash = generate_password_hash(password)
+    
+    def get_updated_chats(self, current_user, session):
+        """
+        Return information about the user's updated chats,
+        if there are any.
+
+        :param current_user: the user currently logged in
+        :param session: flask session
+        :returns: dictionary with the keys 
+                  'chats', 'current_chat_messages', 'current_username'
+                  or None
+        """
+        available_chats = self.get_available_chats_query().all()
+        chats = []
+        messages = []
+        for chat in available_chats:
+            unread_messages_query = self.get_unread_messages_query(chat)
+            count = unread_messages_query.count()
+            if count:
+                chats.append({'chat_id': str(chat.id),
+                              'unread_messages_count': count,
+                              'chat_name': chat.get_name(self)})
+                current_chat_id = session.get((current_user.id, 
+                                               'current_chat_id'))
+                if current_chat_id == chat.id:
+                    messages = (Message
+                                .get_messages_list(unread_messages_query))
+        if chats:
+            data = {'chats': chats,
+                    'current_chat_messages': messages,
+                    'current_username': self.username}
+            return data        
 
     def get_chat_query(self, user_ids):
         """
@@ -748,8 +783,8 @@ class User(UserMixin, database.Model):
         and set current user's 'confirmed' column to True
         if it does.
 
-        :param token: TimedJSONWebSignature instance
-        :returns: True if given token belongs to current user,
+        :param token: TimedJSONWebSignature instance or string
+        :returns: True if the given token belongs to current user,
                   False otherwise
         """
         serializer = Serializer(current_app.config['SECRET_KEY'])

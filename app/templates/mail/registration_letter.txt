@@ -1,2 +1,2 @@
-Hello {{user.username}}! It seems you've registered at Simple Messenger.
+Hello {{username}}! It seems you've registered at Simple Messenger.
 Please follow the link {{link}} to confirm registration.

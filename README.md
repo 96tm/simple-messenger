@@ -7,6 +7,7 @@ It uses ```WebSocket API```<br>
 (```flask-socketio``` for the server, ```socket.io``` for the client, ```gevent``` as a transport)<br> 
 and features a tiny REST API.<br>
 ```PostgreSQL``` or ```sqlite3``` can be used.<br>
+Email sending is implemented using Celery with Redis as a message broker.
 The web interface looks okay in ```Firefox 78.0.2```, not so much in ```Chromium 84.0.4147.89```.<br>
 Other browsers have not been tested.
 
@@ -114,10 +115,10 @@ Other browsers have not been tested.
   $ sudo ./install.sh "MAIL_SERVER" "EMAIL_ADDRESS" "EMAIL_PASSWORD"
   ```
   Now you can open the app at <a href="http://localhost:8888/auth/signup">localhost:8888/auth/signup</a> and register.<br>
-  Or you can <a href="http://localhost:8888">log in</a> right away with the one of the test email/password pairs:
-  - email ```arthur@arthur.arthur```, password ```arthur```;
-  - email ```morgain@morgain.morgain```, password ```morgain```;
-  - email ```merlin@merlin.merlin```, password ```merlin```.
+  Or you can <a href="http://localhost:8888">log in</a> right away with one of the test email/password pairs:
+  - email ```arthur@arthur.arthur```, password ```arthurarthur```;
+  - email ```morgain@morgain.morgain```, password ```morgainmorgain```;
+  - email ```merlin@merlin.merlin```, password ```merlinmerlin```.
  
  To uninstall the application, run the following:<br>
   ```sh
@@ -126,6 +127,7 @@ Other browsers have not been tested.
   To remove the images:
   ```sh
   $ sudo docker image rm python:3.7-alpine
+  $ sudo docker image rm redis
   $ sudo docker image rm postgres
   ```
 
