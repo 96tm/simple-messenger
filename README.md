@@ -7,7 +7,7 @@ It uses ```WebSocket API```<br>
 (```flask-socketio``` for the server, ```socket.io``` for the client, ```gevent``` as a transport)<br> 
 and features a tiny REST API.<br>
 ```PostgreSQL``` is the default RDBMS.<br>
-Email sending is implemented using Celery with Redis as a message broker.<br>
+Email sending is implemented using ```Celery``` with ```Redis``` as a message broker.
 The web interface looks okay in ```Firefox 78.0.2```, not so much in ```Chromium 84.0.4147.89```.<br>
 Other browsers have not been tested.
 
@@ -107,12 +107,12 @@ Other browsers have not been tested.
   ```sh
   $ git clone https://github.com/96tm/simple-messenger.git; cd simple-messenger; chmod +x install.sh
   ```
-  - run the installation script 
-  (replace ```MAIL_SERVER``` with an email server of your choice,
-   ```EMAIL_ADDRESS``` with an account address on that server,
-   ```EMAIL_PASSWORD``` with the account's password):<br>
+  - run the installation script<br>
+  (replace ```MAIL_SERVER``` with an email server of your choice,<br>
+   ```EMAIL_ADDRESS``` with an account address on that server,<br>
+   ```EMAIL_PASSWORD``` with the account's password;<br> ```MAIL_PORT``` is optional and equals ```587``` by default):<br>
   ```sh
-  $ sudo ./install.sh "MAIL_SERVER" "EMAIL_ADDRESS" "EMAIL_PASSWORD"
+  $ sudo ./install.sh "MAIL_SERVER" "EMAIL_ADDRESS" "EMAIL_PASSWORD" "MAIL_PORT"
   ```
   Now you can open the app at <a href="http://localhost:8888/auth/signup">localhost:8888/auth/signup</a> and register.<br>
   Or you can <a href="http://localhost:8888">log in</a> right away with one of the test email/password pairs:
