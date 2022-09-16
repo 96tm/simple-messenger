@@ -27,7 +27,7 @@ idna==2.9
 itsdangerous==1.1.0
 Jinja2==2.11.2
 kombu==4.6.11
-Mako==1.1.2
+Mako==1.2.2
 MarkupSafe==1.1.1
 mypy==0.782
 mypy-extensions==0.4.3
